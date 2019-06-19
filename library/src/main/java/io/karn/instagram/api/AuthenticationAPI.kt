@@ -49,8 +49,10 @@ internal object AuthenticationAPI {
                 data = hashMapOf("security_code" to Integer.parseInt(code)))
     }
 
-    fun logout(): Response {
-        return get(url = Endpoints.LOGOUT, headers = Crypto.HEADERS)
+    fun logout(session: Session): Response {
+        return post(url = Endpoints.LOGOUT,
+                headers = Crypto.HEADERS,
+                data = hashMapOf("guid" to session.uuid))
     }
 
     internal fun parseCSRFToken(response: Response): String? = response.cookies.getCookie("csrftoken")?.value?.toString()
