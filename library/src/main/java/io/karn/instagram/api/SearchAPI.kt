@@ -8,7 +8,12 @@ import khttp.get
 internal object SearchAPI {
 
     fun search(query: String, session: Session) =
-            get(url = String.format(Endpoints.SEARCH, "${session.primaryKey}_${session.uuid}", query),
+            get(url = Endpoints.SEARCH,
+                    params = mapOf(
+                            "rank_token" to "${session.primaryKey}_${session.uuid}",
+                            "is_typeahead" to "false",
+                            "query" to query
+                    ),
                     headers = Crypto.HEADERS,
                     cookies = session.cookieJar)
 }

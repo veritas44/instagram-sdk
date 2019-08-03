@@ -44,6 +44,16 @@ class Authentication internal constructor() {
         const val AUTH_METHOD_PHONE = "phone"
     }
 
+    /**
+     * Creates a SyntheticResponse from the response of a authentication API request.
+     *
+     * @param username  The username of the account that is being authenticated. Usernames must follow the platform
+     *                  requirements; usernames with single spaces in place of an userscore are known to work but should
+     *                  not be used.
+     * @param password  The corresponding password.
+     * @param token     An optional auth token to skip the CSRF token phase.
+     * @return  A [SyntheticResponse.Auth] object.
+     */
     fun authenticate(username: String, password: String, token: String? = null): SyntheticResponse.Auth {
         if (!token.isNullOrBlank()) {
             // Go straight to login.
@@ -65,6 +75,16 @@ class Authentication internal constructor() {
         }
     }
 
+    /**
+     * Creates a SyntheticResponse from the response of a two factor login API request.
+     *
+     * @param code          The two factor code that was sent to the user's phone/email.
+     * @param identifier    The two factor login identifier token.
+     * @param deviceId      The generated device ID associated with this session.
+     * @param username      The username of the account that is being authenticated. See: [authenticate]
+     * @param password      The password of the account that is being authenticated. See: [authenticate]
+     * @return A [SyntheticResponse.TwoFactorResult] object.
+     */
     fun twoFactorLogin(code: String, identifier: String, token: String, deviceId: String, username: String, password: String): SyntheticResponse.TwoFactorResult {
         val data = Crypto.generateTwoFactorPayload(code.replace("\\s".toRegex(), ""), identifier, token, username, password, deviceId)
 
@@ -78,6 +98,11 @@ class Authentication internal constructor() {
         }
     }
 
+    /**
+     * Creates a SyntheticResponse from the response of an auth preperation API request.
+     *
+     * @param path  The path of the auth challenge API as returned from the corresponding sentry.
+     */
     fun prepareAuthChallenge(path: String): SyntheticResponse.ChallengeResult {
         val (res, error) = wrapAPIException { AuthenticationAPI.prepareAuthChallenge(path, Instagram.session) }
 
@@ -89,6 +114,7 @@ class Authentication internal constructor() {
 
                 when (res.jsonObject.optString("step_name")) {
                     "select_verify_method" -> SyntheticResponse.ChallengeResult.Success(res.jsonObject)
+                    "delta_login_review" -> SyntheticResponse.ChallengeResult.Success(res.jsonObject)
                     else -> SyntheticResponse.ChallengeResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
                 }
             }
@@ -129,7 +155,7 @@ class Authentication internal constructor() {
     }
 
     fun logoutUser(): SyntheticResponse.Logout {
-        val (res, error) = wrapAPIException { AuthenticationAPI.logout() }
+        val (res, error) = wrapAPIException { AuthenticationAPI.logout(Instagram.session) }
 
         res ?: return SyntheticResponse.Logout.Failure(error!!)
 

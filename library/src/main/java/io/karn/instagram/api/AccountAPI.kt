@@ -14,12 +14,22 @@ internal object AccountAPI {
                     cookies = session.cookieJar)
 
     fun feed(feedUserKey: String, maxId: String, minTimestamp: String, session: Session) =
-            get(url = String.format(Endpoints.ACCOUNT_FEED, feedUserKey, maxId, minTimestamp, "${session.primaryKey}_${session.uuid}"),
+            get(url = String.format(Endpoints.ACCOUNT_FEED, feedUserKey),
+                    params = mapOf(
+                            "max_id" to maxId,
+                            "min_timestamp" to minTimestamp,
+                            "rank_token" to "${session.primaryKey}_${session.uuid}",
+                            "ranked_content" to "true"
+                    ),
                     headers = Crypto.HEADERS,
                     cookies = session.cookieJar)
 
     fun relationships(endpoint: String, userKey: String, maxId: String, session: Session) =
-            get(url = String.format(endpoint, userKey, "${session.primaryKey}_${session.uuid}", maxId),
+            get(url = String.format(endpoint, userKey),
+                    params = mapOf(
+                            "rank_token" to "${session.primaryKey}_${session.uuid}",
+                            "max_id" to maxId
+                    ),
                     headers = Crypto.HEADERS,
                     cookies = session.cookieJar)
 

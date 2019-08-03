@@ -1,6 +1,8 @@
 package io.karn.instagram.common
 
 import io.karn.instagram.exceptions.InstagramAPIException
+import khttp.responses.Response
+import org.json.JSONException
 import org.json.JSONObject
 import java.net.ConnectException
 import java.net.SocketTimeoutException

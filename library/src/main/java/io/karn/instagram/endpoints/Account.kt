@@ -15,7 +15,7 @@ class Account internal constructor() {
      * Create a SyntheticResponse from the response of a profile API request.
      *
      * @param userKey    The Primary Key associated with the profile.
-     * @return  A {@link SyntheticResponse.AccountDetails} object.
+     * @return  A [SyntheticResponse.AccountDetails] object.
      */
     fun getAccount(userKey: String): SyntheticResponse.AccountDetails {
         val (res, error) = wrapAPIException { AccountAPI.accountInfo(userKey, Instagram.session) }
@@ -35,7 +35,7 @@ class Account internal constructor() {
      * @param userKey       The User Key associated with the profile.
      * @param maxId         The pagination ID to complete the API request.
      * @param minTimestamp  The timestamp at which to begin the fetch of the feed.
-     * @return  A {@link SyntheticResponse.ProfileFeed} object.
+     * @return  A [SyntheticResponse.ProfileFeed] object.
      */
     fun getFeed(userKey: String, maxId: String = "", minTimestamp: String = ""): SyntheticResponse.ProfileFeed {
         val (res, error) = wrapAPIException { AccountAPI.feed(userKey, maxId, minTimestamp, Instagram.session) }
@@ -53,7 +53,7 @@ class Account internal constructor() {
      *
      * @param userKey   The User Key of the profile of with the relationship is being queried.
      * @param maxId     The pagination ID to complete the API request.
-     * @return  A {@link SyntheticResponse.Relationships} object.
+     * @return  A [SyntheticResponse.Relationships] object.
      */
     fun getFollowers(userKey: String, maxId: String = ""): SyntheticResponse.Relationships =
             getRelationship(Endpoints.FOLLOWERS, userKey, maxId)
@@ -63,7 +63,7 @@ class Account internal constructor() {
      *
      * @param userKey   The User Key of the profile of with the relationship is being queried.
      * @param maxId     The pagination ID to complete the API request.
-     * @return  A {@link SyntheticResponse.Relationships} object.
+     * @return  A [SyntheticResponse.Relationships] object.
      */
     fun getFollowing(userKey: String, maxId: String = ""): SyntheticResponse.Relationships =
             getRelationship(Endpoints.FOLLOWING, userKey, maxId)
@@ -87,15 +87,15 @@ class Account internal constructor() {
     /**
      * Creates a SyntheticResponse from the response of a user follow API request.
      *
-     * @return  A {@link SyntheticResponse.RelationshipUpdate} object.
+     * @return  A [SyntheticResponse.RelationshipUpdate] object.
      */
     fun followProfile(userKey: String): SyntheticResponse.RelationshipUpdate =
             updateRelationship(Endpoints.FOLLOW, userKey)
 
     /**
-     * Creates a SyntheticResponse from the response of a user follow API request.
+     * Creates a SyntheticResponse from the response of a user unfollow API request.
      *
-     * @return  A {@link SyntheticResponse.RelationshipUpdate} object.
+     * @return  A [SyntheticResponse.RelationshipUpdate] object.
      */
     fun unfollowProfile(userKey: String): SyntheticResponse.RelationshipUpdate =
             updateRelationship(Endpoints.UNFOLLOW, userKey)
@@ -114,7 +114,7 @@ class Account internal constructor() {
     /**
      * Creates a SyntheticResponse from the response of a blocked user list API request.
      *
-     * @return  A {@link SyntheticResponse.Blocks} object.
+     * @return  A [SyntheticResponse.Blocks] object.
      */
     fun getBlocked(): SyntheticResponse.Blocks {
         val (res, error) = wrapAPIException { AccountAPI.blockedAccounts(Instagram.session) }

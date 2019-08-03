@@ -11,7 +11,11 @@ import khttp.responses.Response
 internal object AuthenticationAPI {
 
     fun getTokenForAuth(): Response {
-        return get(url = String.format(Endpoints.CSRF_TOKEN, Crypto.generateUUID(false)),
+        return get(url = Endpoints.CSRF_TOKEN,
+                params = mapOf(
+                        "challenge_type" to "signup",
+                        "guid" to Crypto.generateUUID(false)
+                ),
                 headers = Crypto.HEADERS,
                 allowRedirects = true)
     }
@@ -49,8 +53,10 @@ internal object AuthenticationAPI {
                 data = hashMapOf("security_code" to Integer.parseInt(code)))
     }
 
-    fun logout(): Response {
-        return get(url = Endpoints.LOGOUT, headers = Crypto.HEADERS)
+    fun logout(session: Session): Response {
+        return post(url = Endpoints.LOGOUT,
+                headers = Crypto.HEADERS,
+                data = hashMapOf("guid" to session.uuid))
     }
 
     internal fun parseCSRFToken(response: Response): String? = response.cookies.getCookie("csrftoken")?.value?.toString()

@@ -9,7 +9,11 @@ import khttp.get
 internal object DirectMessagesAPI {
 
     fun getMessages(maxID: String, session: Session) =
-            get(url = String.format(Endpoints.DIRECT_MESSAGES, maxID),
+            get(url = Endpoints.DIRECT_MESSAGES,
+                    params = mapOf(
+                            "persistentBadging" to "true",
+                            "use_unified_inbox" to "true"
+                    ),
                     headers = Crypto.HEADERS,
                     cookies = session.cookieJar)
 }
