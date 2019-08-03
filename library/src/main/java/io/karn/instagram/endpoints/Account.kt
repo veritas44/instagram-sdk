@@ -93,7 +93,7 @@ class Account internal constructor() {
             updateRelationship(Endpoints.FOLLOW, userKey)
 
     /**
-     * Creates a SyntheticResponse from the response of a user follow API request.
+     * Creates a SyntheticResponse from the response of a user unfollow API request.
      *
      * @return  A [SyntheticResponse.RelationshipUpdate] object.
      */

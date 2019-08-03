@@ -11,7 +11,11 @@ import khttp.responses.Response
 internal object AuthenticationAPI {
 
     fun getTokenForAuth(): Response {
-        return get(url = String.format(Endpoints.CSRF_TOKEN, Crypto.generateUUID(false)),
+        return get(url = Endpoints.CSRF_TOKEN,
+                params = mapOf(
+                        "challenge_type" to "signup",
+                        "guid" to Crypto.generateUUID(false)
+                ),
                 headers = Crypto.HEADERS,
                 allowRedirects = true)
     }
