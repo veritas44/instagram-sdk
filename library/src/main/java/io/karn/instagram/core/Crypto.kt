@@ -10,24 +10,41 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 internal object Crypto {
-    private const val SIG_KEY = "937463b5272b5d60e9d20f0f8d7d192193dd95095a3ad43725d494300a5ea5fc"
-    const val SIG_VERSION = "4"
+    private const val SIG_KEY = "e0767f8a7ae9f6c1f9d3674be35d96117f0589960bf3dbd2921f020b33ca4b9f"
+    private const val SIG_VERSION = "4"
 
     internal const val DPI: String = "640dpi"
     internal const val DISPLAY_RESOLUTION: String = "1440x2560"
 
-    private const val APP_VERSION = "85.0.0.21.100"
-    private const val VERSION_CODE: String = "146536611"
+    private const val APP_ID = "567067343352427"
+    private const val APP_VERSION = "100.0.0.17.129"
+    private const val VERSION_CODE: String = "161478673"
 
-    val HEADERS: HashMap<String, String> = hashMapOf(
-            "Accept-Encoding" to "gzip, deflate",
-            "Connection" to "close",
-            "Accept" to "*/*",
-            "Content-Type" to "application/x-www-form-urlencoded; charset=UTF-8",
-            "Cookie2" to "\$Version=1",
-            "Accept-Language" to "en-US",
-            "User-Agent" to buildUserAgent()
-    )
+    private val PIGEON_SESSION_ID = generateTemporaryGUID("pigeonSessionId", Instagram.session.uuid, 1200000f)
+
+    val HEADERS: HashMap<String, String>
+        get() {
+            return hashMapOf(
+                    "Accept-Encoding" to "gzip, deflate",
+                    "Connection" to "keep-alive",
+                    "Accept" to "*/*",
+                    "Content-Type" to "application/x-www-form-urlencoded; charset=UTF-8",
+                    "Cookie2" to "\$Version=1",
+                    "Accept-Language" to "en-US",
+                    "Host" to "i.instagram.com",
+                    "X-Pigeon-Session-Id" to PIGEON_SESSION_ID,
+                    "X-Pigeon-Rawclienttime" to "%.3f".format(System.currentTimeMillis() / 1000f),
+                    "X-IG-Connection-Speed" to  "-1kbps",
+                    "X-IG-Bandwidth-Speed-KBPS" to  "-1.000",
+                    "X-IG-Bandwidth-TotalBytes-B" to  "0",
+                    "X-IG-Bandwidth-TotalTime-MS" to  "0",
+                    "X-IG-Connection-Type" to "WIFI",
+                    "X-IG-Capabilities" to "3brTvw==",
+                    "X-IG-App-ID" to APP_ID,
+                    "X-FB-HTTP-Engine" to "Liger",
+                    "User-Agent" to buildUserAgent()
+            )
+        }
 
     /**
      * Function to build the UserAgent which is used with the API to manage user authentication. This User Agent must be
@@ -65,7 +82,10 @@ internal object Crypto {
         return if (dash) {
             uuid
         } else uuid.replace("-", "")
+    }
 
+    private fun generateTemporaryGUID(name: String, uuid: String, duration: Float): String {
+        return UUID.nameUUIDFromBytes("$name$uuid${Math.round(System.currentTimeMillis() / duration)}".toByteArray()).toString()
     }
 
     fun generateLoginPayload(token: String, username: String, password: String, loginAttempts: Int, deviceId: String = generateDeviceId(username, password)): String {
