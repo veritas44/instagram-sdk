@@ -39,7 +39,7 @@ The most basic case is as follows:
 Instagram.init(context)
 
 // Attempt to sign-in to an account.
-Instagram.getInstance().authentication.authenticate("username", "password")
+val res = Instagram.getInstance().authentication.authenticate("username", "password")
 // Print the response.
 Log.v("SDK", "Auth Response: $res")
 ```
