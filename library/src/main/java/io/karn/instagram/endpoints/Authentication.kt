@@ -115,7 +115,7 @@ class Authentication internal constructor() {
                 when (res.jsonObject.optString("step_name")) {
                     "select_verify_method" -> SyntheticResponse.ChallengeResult.Success(res.jsonObject)
                     "delta_login_review" -> SyntheticResponse.ChallengeResult.Success(res.jsonObject)
-                    else -> SyntheticResponse.ChallengeResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
+                    else -> SyntheticResponse.ChallengeResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.toString()))
                 }
             }
             else -> SyntheticResponse.ChallengeResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
@@ -123,7 +123,11 @@ class Authentication internal constructor() {
     }
 
     fun selectAuthChallengeMethod(path: String, method: String): SyntheticResponse.AuthMethodSelectionResult {
-        val (res, error) = wrapAPIException { AuthenticationAPI.selectAuthChallengeMethod(path, method, Instagram.session) }
+        val data = Crypto.generateAuthenticatedParams(Instagram.session) {
+            it.put("choice", if (AUTH_METHOD_PHONE == method) 0 else 1)
+        }
+
+        val (res, error) = wrapAPIException { AuthenticationAPI.selectAuthChallengeMethod(path, data, Instagram.session) }
 
         res ?: return SyntheticResponse.AuthMethodSelectionResult.Failure(error!!)
 
@@ -136,7 +140,7 @@ class Authentication internal constructor() {
                             ?: JSONObject())
                     "verify_email" -> SyntheticResponse.AuthMethodSelectionResult.EmailSelectionSuccess(res.jsonObject.optJSONObject("step_data")
                             ?: JSONObject())
-                    else -> SyntheticResponse.AuthMethodSelectionResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
+                    else -> SyntheticResponse.AuthMethodSelectionResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.toString()))
                 }
             }
             else -> SyntheticResponse.AuthMethodSelectionResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
