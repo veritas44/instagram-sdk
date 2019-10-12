@@ -14,7 +14,7 @@ data class Session internal constructor(
 ) {
     companion object {
         fun buildSession(primaryKey: String, uuid: String, cookies: String): Session {
-            return Session(primaryKey, uuid, CookieUtils.deserializeFromJson(JSONArray(cookies)))
+            return Session(primaryKey, uuid, "", CookieUtils.deserializeFromJson(JSONArray(cookies)))
         }
     }
 }
