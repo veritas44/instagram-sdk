@@ -123,7 +123,7 @@ class Authentication internal constructor() {
     }
 
     fun selectAuthChallengeMethod(path: String, method: String): SyntheticResponse.AuthMethodSelectionResult {
-        val data = Crypto.generateAuthenticatedParams(Instagram.session) {
+        val data = Crypto.generateAuthenticatedParamsV2(Instagram.session) {
             it.put("choice", if (AUTH_METHOD_PHONE == method) 0 else 1)
         }
 
@@ -174,6 +174,8 @@ class Authentication internal constructor() {
 
         // Generate the login payload.
         val deviceId = Crypto.generateDeviceId(username, password)
+        Instagram.session.deviceId = deviceId
+
         val data = Crypto.generateLoginPayload(token, username, password, 0, deviceId)
 
         val (res, error) = wrapAPIException { AuthenticationAPI.login(data) }

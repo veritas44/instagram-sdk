@@ -9,6 +9,7 @@ import org.json.JSONArray
 data class Session internal constructor(
         internal var primaryKey: String = "",
         internal var uuid: String = "",
+        internal var deviceId: String = "",
         internal var cookieJar: CookieJar = CookieJar()
 ) {
     companion object {
