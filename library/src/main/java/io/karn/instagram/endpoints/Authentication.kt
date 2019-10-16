@@ -148,12 +148,22 @@ class Authentication internal constructor() {
     }
 
     fun submitChallengeCode(path: String, code: String): SyntheticResponse.ChallengeCodeSubmitResult {
-        val (res, error) = wrapAPIException { AuthenticationAPI.submitAuthChallenge(path, code, Instagram.session) }
+        val data = Crypto.generateAuthenticatedParamsV2(Instagram.session) {
+            it.put("security_code", code)
+        }
+
+        val (res, error) = wrapAPIException { AuthenticationAPI.submitAuthChallenge(path, data, Instagram.session) }
 
         res ?: return SyntheticResponse.ChallengeCodeSubmitResult.Failure(error!!)
 
         return when (res.statusCode) {
-            200 -> SyntheticResponse.ChallengeCodeSubmitResult.Success(buildSuccess(res))
+            200 -> {
+                if (res.jsonObject.optString("action") == "ok") {
+                    SyntheticResponse.ChallengeCodeSubmitResult.Close(res.jsonObject)
+                } else {
+                    SyntheticResponse.ChallengeCodeSubmitResult.Success(buildSuccess(res))
+                }
+            }
             else -> SyntheticResponse.ChallengeCodeSubmitResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
         }
     }

@@ -46,11 +46,11 @@ internal object AuthenticationAPI {
                 data = data)
     }
 
-    fun submitAuthChallenge(challengePath: String, code: String, session: Session): Response {
+    fun submitAuthChallenge(challengePath: String, data: String, session: Session): Response {
         return post(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
                 headers = mapOf("User-Agent" to Crypto.buildUserAgent()),
                 cookies = session.cookieJar,
-                data = hashMapOf("security_code" to Integer.parseInt(code)))
+                data = data)
     }
 
     fun logout(session: Session): Response {
