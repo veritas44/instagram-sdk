@@ -115,7 +115,7 @@ class Authentication internal constructor() {
                 when (res.jsonObject.optString("step_name")) {
                     "select_verify_method" -> SyntheticResponse.ChallengeResult.Success(res.jsonObject)
                     "delta_login_review" -> SyntheticResponse.ChallengeResult.Success(res.jsonObject)
-                    else -> SyntheticResponse.ChallengeResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
+                    else -> SyntheticResponse.ChallengeResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.toString()))
                 }
             }
             else -> SyntheticResponse.ChallengeResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
@@ -123,7 +123,11 @@ class Authentication internal constructor() {
     }
 
     fun selectAuthChallengeMethod(path: String, method: String): SyntheticResponse.AuthMethodSelectionResult {
-        val (res, error) = wrapAPIException { AuthenticationAPI.selectAuthChallengeMethod(path, method, Instagram.session) }
+        val data = Crypto.generateAuthenticatedParamsV2(Instagram.session) {
+            it.put("choice", if (AUTH_METHOD_PHONE == method) 0 else 1)
+        }
+
+        val (res, error) = wrapAPIException { AuthenticationAPI.selectAuthChallengeMethod(path, data, Instagram.session) }
 
         res ?: return SyntheticResponse.AuthMethodSelectionResult.Failure(error!!)
 
@@ -136,7 +140,7 @@ class Authentication internal constructor() {
                             ?: JSONObject())
                     "verify_email" -> SyntheticResponse.AuthMethodSelectionResult.EmailSelectionSuccess(res.jsonObject.optJSONObject("step_data")
                             ?: JSONObject())
-                    else -> SyntheticResponse.AuthMethodSelectionResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
+                    else -> SyntheticResponse.AuthMethodSelectionResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.toString()))
                 }
             }
             else -> SyntheticResponse.AuthMethodSelectionResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
@@ -144,12 +148,22 @@ class Authentication internal constructor() {
     }
 
     fun submitChallengeCode(path: String, code: String): SyntheticResponse.ChallengeCodeSubmitResult {
-        val (res, error) = wrapAPIException { AuthenticationAPI.submitAuthChallenge(path, code, Instagram.session) }
+        val data = Crypto.generateAuthenticatedParamsV2(Instagram.session) {
+            it.put("security_code", code)
+        }
+
+        val (res, error) = wrapAPIException { AuthenticationAPI.submitAuthChallenge(path, data, Instagram.session) }
 
         res ?: return SyntheticResponse.ChallengeCodeSubmitResult.Failure(error!!)
 
         return when (res.statusCode) {
-            200 -> SyntheticResponse.ChallengeCodeSubmitResult.Success(buildSuccess(res))
+            200 -> {
+                if (res.jsonObject.optString("action") == "ok") {
+                    SyntheticResponse.ChallengeCodeSubmitResult.Close(res.jsonObject)
+                } else {
+                    SyntheticResponse.ChallengeCodeSubmitResult.Success(buildSuccess(res))
+                }
+            }
             else -> SyntheticResponse.ChallengeCodeSubmitResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
         }
     }
@@ -170,6 +184,8 @@ class Authentication internal constructor() {
 
         // Generate the login payload.
         val deviceId = Crypto.generateDeviceId(username, password)
+        Instagram.session.deviceId = deviceId
+
         val data = Crypto.generateLoginPayload(token, username, password, 0, deviceId)
 
         val (res, error) = wrapAPIException { AuthenticationAPI.login(data) }
