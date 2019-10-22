@@ -45,7 +45,9 @@ internal object AuthenticationAPI {
 
     fun selectAuthChallengeMethod(challengePath: String, data: String, session: Session): Response {
         return post(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
-                headers = Crypto.HEADERS,
+                headers = Crypto.HEADERS.also {
+                    it["Content-Length"] = data.length.toString()
+                },
                 cookies = session.cookieJar,
                 data = data)
     }

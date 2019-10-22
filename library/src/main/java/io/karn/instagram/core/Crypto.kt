@@ -40,6 +40,7 @@ internal object Crypto {
                     "X-IG-Capabilities" to "3brTvwE=",
                     "X-IG-App-ID" to APP_ID,
                     "X-FB-HTTP-Engine" to "Liger",
+                    "X-Bloks-Version-Id" to "8a233a560240c2cffeb93421bb31df66e4f81471f77d74f7752ea441e9271665",
                     "User-Agent" to buildUserAgent()
             )
         }
