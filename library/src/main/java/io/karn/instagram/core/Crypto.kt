@@ -39,7 +39,7 @@ internal object Crypto {
                     "X-IG-Bandwidth-TotalBytes-B" to  "0",
                     "X-IG-Bandwidth-TotalTime-MS" to  "0",
                     "X-IG-Connection-Type" to "WIFI",
-                    "X-IG-Capabilities" to "3brTvw==",
+                    "X-IG-Capabilities" to "3brTvwE=",
                     "X-IG-App-ID" to APP_ID,
                     "X-FB-HTTP-Engine" to "Liger",
                     "User-Agent" to buildUserAgent()

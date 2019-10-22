@@ -36,6 +36,10 @@ internal object AuthenticationAPI {
     fun prepareAuthChallenge(challengePath: String, session: Session): Response {
         return get(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
                 headers = Crypto.HEADERS,
+                params = mapOf(
+                        "guid" to session.uuid,
+                        "device_id" to session.deviceId
+                ),
                 cookies = session.cookieJar)
     }
 
