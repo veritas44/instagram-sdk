@@ -10,15 +10,15 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 internal object Crypto {
-    private const val SIG_KEY = "e0767f8a7ae9f6c1f9d3674be35d96117f0589960bf3dbd2921f020b33ca4b9f"
+    private const val SIG_KEY = "44eb09cf8468b639a2c85f5040f83ac534db054bbb9264b6dafaa4436862266e"
     private const val SIG_VERSION = "4"
 
     internal const val DPI: String = "640dpi"
     internal const val DISPLAY_RESOLUTION: String = "1440x2560"
 
     private const val APP_ID = "567067343352427"
-    private const val APP_VERSION = "100.0.0.17.129"
-    private const val VERSION_CODE: String = "161478673"
+    private const val APP_VERSION = "110.0.0.16.119"
+    private const val VERSION_CODE: String = "171727776"
 
     private val PIGEON_SESSION_ID = generateTemporaryGUID("pigeonSessionId", Instagram.session.uuid, 1200000f)
 
@@ -27,9 +27,7 @@ internal object Crypto {
             return hashMapOf(
                     "Accept-Encoding" to "gzip, deflate",
                     "Connection" to "keep-alive",
-                    "Accept" to "*/*",
                     "Content-Type" to "application/x-www-form-urlencoded; charset=UTF-8",
-                    "Cookie2" to "\$Version=1",
                     "Accept-Language" to "en-US",
                     "Host" to "i.instagram.com",
                     "X-Pigeon-Session-Id" to PIGEON_SESSION_ID,
@@ -73,7 +71,7 @@ internal object Crypto {
                        model: String = android.os.Build.MODEL,
                        hardware: String = android.os.Build.HARDWARE): String {
 
-        return "Instagram $APP_VERSION Android ($androidVersion/$androidRelease; $dpi; $resolution; $manufacturer$brand; $device; $model; $hardware; en_US; $VERSION_CODE)"
+        return "Instagram $APP_VERSION Android ($androidVersion/$androidRelease; $dpi; $resolution; $manufacturer$brand; $model; $device; $hardware; en_US; $VERSION_CODE)"
     }
 
     fun generateUUID(dash: Boolean): String {
@@ -172,6 +170,6 @@ internal object Crypto {
 
         val signedBody = generateSignedBody(SIG_KEY, payload)
 
-        return ("ig_sig_key_version=$SIG_VERSION&signed_body=$signedBody.$parsedData")
+        return ("signed_body=$signedBody.$parsedData&ig_sig_key_version=$SIG_VERSION")
     }
 }
