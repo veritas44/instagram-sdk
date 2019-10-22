@@ -7,6 +7,7 @@ import io.karn.instagram.endpoints.Authentication
 import khttp.get
 import khttp.post
 import khttp.responses.Response
+import khttp.structures.cookie.CookieJar
 
 internal object AuthenticationAPI {
 
@@ -46,9 +47,9 @@ internal object AuthenticationAPI {
     fun selectAuthChallengeMethod(challengePath: String, data: String, session: Session): Response {
         return post(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
                 headers = Crypto.HEADERS.also {
+                    it["Cookie"] = getCookie(session.cookieJar)
                     it["Content-Length"] = data.length.toString()
                 },
-                cookies = session.cookieJar,
                 data = data)
     }
 
@@ -63,6 +64,10 @@ internal object AuthenticationAPI {
         return post(url = Endpoints.LOGOUT,
                 headers = Crypto.HEADERS,
                 data = hashMapOf("guid" to session.uuid))
+    }
+
+    internal fun getCookie(cookieJar: CookieJar): String {
+        return "mid=${cookieJar.getCookie("mid")?.value?.toString()}; csrftoken=${cookieJar.getCookie("csrftoken")?.value?.toString()}; rur=FTW; urlgen={\\"
     }
 
     internal fun parseCSRFToken(response: Response): String? = response.cookies.getCookie("csrftoken")?.value?.toString()
