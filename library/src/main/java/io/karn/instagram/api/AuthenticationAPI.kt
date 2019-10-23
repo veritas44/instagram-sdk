@@ -53,7 +53,7 @@ internal object AuthenticationAPI {
 
     fun submitAuthChallenge(challengePath: String, data: String, session: Session): Response {
         return post(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
-                headers = mapOf("User-Agent" to Crypto.buildUserAgent()),
+                headers = Crypto.HEADERS,
                 cookies = session.cookieJar,
                 data = data)
     }
