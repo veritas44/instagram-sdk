@@ -43,8 +43,6 @@ sealed class SyntheticResponse {
     sealed class ChallengeCodeSubmitResult : SyntheticResponse() {
         data class Success(val data: JSONObject) : ChallengeCodeSubmitResult()
 
-        data class Close(val data: JSONObject) : ChallengeCodeSubmitResult()
-
         data class Failure(val exception: InstagramAPIException) : ChallengeCodeSubmitResult()
     }
 

@@ -7,6 +7,7 @@ import io.karn.instagram.endpoints.Authentication
 import khttp.get
 import khttp.post
 import khttp.responses.Response
+import khttp.structures.cookie.CookieJar
 
 internal object AuthenticationAPI {
 
@@ -36,6 +37,10 @@ internal object AuthenticationAPI {
     fun prepareAuthChallenge(challengePath: String, session: Session): Response {
         return get(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
                 headers = Crypto.HEADERS,
+                params = mapOf(
+                        "guid" to session.uuid,
+                        "device_id" to session.deviceId
+                ),
                 cookies = session.cookieJar)
     }
 
@@ -48,7 +53,7 @@ internal object AuthenticationAPI {
 
     fun submitAuthChallenge(challengePath: String, data: String, session: Session): Response {
         return post(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
-                headers = mapOf("User-Agent" to Crypto.buildUserAgent()),
+                headers = Crypto.HEADERS,
                 cookies = session.cookieJar,
                 data = data)
     }

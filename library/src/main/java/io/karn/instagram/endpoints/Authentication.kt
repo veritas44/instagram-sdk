@@ -110,8 +110,6 @@ class Authentication internal constructor() {
 
         return when (res.statusCode) {
             200 -> {
-                Instagram.session.cookieJar = res.cookies
-
                 when (res.jsonObject.optString("step_name")) {
                     "select_verify_method" -> SyntheticResponse.ChallengeResult.Success(res.jsonObject)
                     "delta_login_review" -> SyntheticResponse.ChallengeResult.Success(res.jsonObject)
@@ -123,7 +121,7 @@ class Authentication internal constructor() {
     }
 
     fun selectAuthChallengeMethod(path: String, method: String): SyntheticResponse.AuthMethodSelectionResult {
-        val data = Crypto.generateAuthenticatedParamsV2(Instagram.session) {
+        val data = Crypto.generateAuthenticatedChallengeParams(Instagram.session) {
             it.put("choice", if (AUTH_METHOD_PHONE == method) 0 else 1)
         }
 
@@ -133,8 +131,6 @@ class Authentication internal constructor() {
 
         return when (res.statusCode) {
             200 -> {
-                Instagram.session.cookieJar = res.cookies
-
                 when (res.jsonObject.optString("step_name")) {
                     "verify_code" -> SyntheticResponse.AuthMethodSelectionResult.PhoneSelectionSuccess(res.jsonObject.optJSONObject("step_data")
                             ?: JSONObject())
@@ -148,7 +144,7 @@ class Authentication internal constructor() {
     }
 
     fun submitChallengeCode(path: String, code: String): SyntheticResponse.ChallengeCodeSubmitResult {
-        val data = Crypto.generateAuthenticatedParamsV2(Instagram.session) {
+        val data = Crypto.generateAuthenticatedChallengeParams(Instagram.session) {
             it.put("security_code", code)
         }
 
@@ -157,13 +153,7 @@ class Authentication internal constructor() {
         res ?: return SyntheticResponse.ChallengeCodeSubmitResult.Failure(error!!)
 
         return when (res.statusCode) {
-            200 -> {
-                if (res.jsonObject.optString("action") == "ok") {
-                    SyntheticResponse.ChallengeCodeSubmitResult.Close(res.jsonObject)
-                } else {
-                    SyntheticResponse.ChallengeCodeSubmitResult.Success(buildSuccess(res))
-                }
-            }
+            200 -> SyntheticResponse.ChallengeCodeSubmitResult.Success(buildSuccess(res))
             else -> SyntheticResponse.ChallengeCodeSubmitResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
         }
     }
