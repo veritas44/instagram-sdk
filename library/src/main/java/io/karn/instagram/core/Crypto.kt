@@ -40,7 +40,6 @@ internal object Crypto {
                     "X-IG-Capabilities" to "3brTvwE=",
                     "X-IG-App-ID" to APP_ID,
                     "X-FB-HTTP-Engine" to "Liger",
-                    "X-Bloks-Version-Id" to "8a233a560240c2cffeb93421bb31df66e4f81471f77d74f7752ea441e9271665",
                     "User-Agent" to buildUserAgent()
             )
         }
@@ -123,7 +122,7 @@ internal object Crypto {
         return generateSignature(data.toString())
     }
 
-    fun generateAuthenticatedParamsV2(session: Session, mutate: (JSONObject) -> Unit = {}): String {
+    fun generateAuthenticatedChallengeParams(session: Session, mutate: (JSONObject) -> Unit = {}): String {
         val data = JSONObject()
                 .put("guid", session.uuid)
                 .put("device_id", session.deviceId)
