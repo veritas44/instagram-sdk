@@ -131,8 +131,6 @@ class Authentication internal constructor() {
 
         return when (res.statusCode) {
             200 -> {
-                Instagram.session.cookieJar = res.cookies
-
                 when (res.jsonObject.optString("step_name")) {
                     "verify_code" -> SyntheticResponse.AuthMethodSelectionResult.PhoneSelectionSuccess(res.jsonObject.optJSONObject("step_data")
                             ?: JSONObject())
