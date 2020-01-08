@@ -28,7 +28,7 @@ class InitializationTest {
 
         // Initialize the library
         Instagram.init(RuntimeEnvironment.application) {
-            requestLogger = { method, url, statusCode, userAgent -> }
+            requestLogger = { response -> }
         }
 
         assertNotNull(Instagram.config)

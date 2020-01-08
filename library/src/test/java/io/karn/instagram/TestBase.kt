@@ -19,7 +19,7 @@ open class TestBase {
 
             // Initialize the library
             Instagram.init(RuntimeEnvironment.application) {
-                requestLogger = { method, url, statusCode, userAgent -> }
+                requestLogger = { response -> }
             }
 
             val username = System.getenv("DEFAULT_USERNAME") ?: throw IllegalStateException("No username specified.")

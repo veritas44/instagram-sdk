@@ -1,5 +1,7 @@
 package io.karn.instagram.core
 
+import io.karn.instagram.HttpResponse
+
 
 /**
  * Configuration data class for the library, modify the attributes when initializing the library to change its behaviour
@@ -22,5 +24,5 @@ data class Configuration(
          * @param statusCode    The resulting status code -- e.g 200
          * @param userAgent     The user-agent provided for the HTTP request.
          */
-        var requestLogger: ((requestMethod: String, url: String, statusCode: Int, userAgent: String) -> Unit)? = null
+        var requestLogger: ((response: HttpResponse) -> Unit)? = null
 )

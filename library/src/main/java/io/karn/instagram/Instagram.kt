@@ -6,6 +6,8 @@ import io.karn.instagram.core.Session
 import io.karn.instagram.endpoints.*
 import khttp.KHttpConfig
 
+typealias HttpResponse = khttp.responses.Response
+
 /**
  * The 'Instagram' class is the primary entry point for SDK related functions. Be sure to execute the
  * {@link #init(Configuration)} function to initialize the library with default or custom configuration.
@@ -69,12 +71,7 @@ class Instagram private constructor(private val configuration: Configuration) {
         // TODO: Investigate whether or not we need buffered writers instead.
         configuration.requestLogger?.let { logger ->
             KHttpConfig.attachInterceptor {
-                logger.invoke(
-                        it.request.method,
-                        it.request.url,
-                        it.statusCode,
-                        it.request.headers["User-Agent"] ?: ""
-                )
+                logger.invoke(it)
             }
         }
     }
