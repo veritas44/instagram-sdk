@@ -1,6 +1,7 @@
 package io.karn.instagram.core
 
 import io.karn.instagram.Instagram
+import io.karn.instagram.common.generateUUID
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.nio.charset.Charset
@@ -26,7 +27,7 @@ internal object Crypto {
 
     private val PIGEON_SESSION_ID = generateTemporaryGUID("pigeonSessionId", Instagram.session.uuid, 1200000f)
 
-    val HEADERS: HashMap<String, String>
+    val HEADERS: Map<String, String>
         get() = hashMapOf(
                 "Accept-Encoding" to "gzip, deflate",
                 "Connection" to "keep-alive",
@@ -41,18 +42,19 @@ internal object Crypto {
                 "X-IG-Bandwidth-TotalBytes-B" to "0",
                 "X-IG-Bandwidth-TotalTime-MS" to "0",
                 "X-Bloks-Version-Id" to BLOKS_VERSION_ID,
-                "X-IG-WWW-Claim" to Instagram.session.wwwClaim,
+                "X-MID" to Instagram.session.mid,
+                "X-IG-WWW-Claim" to (Instagram.session.wwwClaim.takeIf { it.isNotBlank() } ?: "0"),
                 "X-Bloks-Is-Layout-RTL" to "false",
                 "X-Bloks-Enable-RenderCore" to "false",
-                "X-IG-Device-ID" to generateUUID(Instagram.config.instanceId),
-                "X-IG-Android-ID" to generateAndroidId(Instagram.config.instanceId),
+                "X-IG-Device-ID" to generateUUID(Instagram.session.instanceId),
+                "X-IG-Android-ID" to generateAndroidId(Instagram.session.instanceId),
                 "X-IG-Connection-Type" to "WIFI",
                 "X-IG-Capabilities" to "3brTvwE=",
                 "X-IG-App-ID" to APP_ID,
                 "User-Agent" to buildUserAgent(),
                 "Accept-Language" to getFormattedLocale(Locale.getDefault(), "-"),
                 "X-FB-HTTP-Engine" to "Liger"
-        )
+        ).filter { it.value.isNotEmpty() }
 
 
     /**
@@ -89,12 +91,12 @@ internal object Crypto {
         return UUID.nameUUIDFromBytes("$name$uuid${(System.currentTimeMillis() / duration).roundToInt()}".toByteArray()).toString()
     }
 
-    fun generateLoginPayload(token: String, username: String, password: String, loginAttempts: Int, deviceId: String = generateAndroidId(Instagram.config.instanceId)): String {
+    fun generateLoginPayload(token: String, username: String, password: String, loginAttempts: Int, deviceId: String = generateAndroidId(Instagram.session.instanceId)): String {
         val data = JSONObject()
-                .put("phone_id", generateUUID(Instagram.config.instanceId + "_phone_id"))
+                .put("phone_id", generateUUID(Instagram.session.instanceId + "_phone_id"))
                 .put("_csrftoken", token)
                 .put("username", username)
-                .put("adid", generateUUID(Instagram.config.instanceId + "_adid"))
+                .put("adid", generateUUID(Instagram.session.instanceId + "_adid"))
                 .put("guid", Instagram.session.uuid)
                 .put("device_id", deviceId)
                 .put("google_tokens", "[]")
@@ -105,7 +107,7 @@ internal object Crypto {
         return generateSignature(data.toString())
     }
 
-    fun generateTwoFactorPayload(code: String, identifier: String, token: String, username: String, password: String, deviceId: String = generateAndroidId(Instagram.config.instanceId)): String {
+    fun generateTwoFactorPayload(code: String, identifier: String, token: String, username: String, password: String, deviceId: String = generateAndroidId(Instagram.session.instanceId)): String {
         val data = JSONObject()
                 .put("verification_code", code)
                 .put("two_factor_identifier", identifier)
@@ -121,8 +123,7 @@ internal object Crypto {
         val data = JSONObject()
                 .put("_uuid", session.uuid)
                 .put("_uid", session.primaryKey)
-                .put("_csrftoken", session.cookieJar.getCookie("csrftoken")?.value?.toString()
-                        ?: "")
+                .put("_csrftoken", session.cookieJar.getCookie("csrftoken")?.value?.toString() ?: "")
 
         mutate(data)
 
@@ -132,9 +133,8 @@ internal object Crypto {
     fun generateAuthenticatedChallengeParams(session: Session, mutate: (JSONObject) -> Unit = {}): String {
         val data = JSONObject()
                 .put("guid", session.uuid)
-                .put("device_id", session.androidId)
-                .put("_csrftoken", session.cookieJar.getCookie("csrftoken")?.value?.toString()
-                        ?: "")
+                .put("device_id", generateAndroidId(Instagram.session.instanceId))
+                .put("_csrftoken", session.cookieJar.getCookie("csrftoken")?.value?.toString() ?: "")
 
         mutate(data)
 
@@ -146,10 +146,6 @@ internal object Crypto {
         val volatileSeed = "12345"
 
         return "android-" + md5Hex(seed + volatileSeed).substring(0, 16)
-    }
-
-    fun generateUUID(instanceId: String): String {
-        return UUID.nameUUIDFromBytes(instanceId.toByteArray()).toString()
     }
 
     fun generateSignature(payload: String): String {

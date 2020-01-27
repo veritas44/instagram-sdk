@@ -15,7 +15,7 @@ open class TestBase {
         if (!intialized) {
             intialized = true
 
-            System.out.println("Initializing")
+            println("Initializing")
 
             // Initialize the library
             Instagram.init(ApplicationProvider.getApplicationContext()) {
@@ -30,21 +30,17 @@ open class TestBase {
             // Authenticate the user.
             val res = Instagram.getInstance().authentication.authenticate(username, password)
 
-            System.out.println(res)
+            println(res)
 
             assertTrue(res is SyntheticResponse.Auth.Success)
 
             assertNotNull(res.data.optJSONObject("logged_in_user"))
+            assertNotEquals("", res.data.optString("primaryKey"))
             assertNotNull(res.data.optJSONArray("cookie"))
-            assertNotEquals("", res.data.optString("uuid"))
+            assertNotEquals("", res.data.optString("wwwClaim"))
+            assertNotEquals("", res.data.optString("mid"))
 
             assertNotNull(res)
-
-            System.out.println("Done initializing.")
-
-            assertNotEquals("0", Instagram.session.wwwClaim)
-
-            System.out.println("Done initializing ${Instagram.session.wwwClaim}.")
         }
     }
 }

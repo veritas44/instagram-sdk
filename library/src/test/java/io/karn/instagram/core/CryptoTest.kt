@@ -1,6 +1,7 @@
 package io.karn.instagram.core
 
 import io.karn.instagram.TestBase
+import io.karn.instagram.common.generateUUID
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -30,8 +31,8 @@ class CryptoTest : TestBase() {
     fun test_deviceIdGeneration() {
         val instanceId = "flkrFMziAva"
         val expected = "10872cce-904e-3543-acd6-2ce750f496dd"
-        assertEquals(expected, Crypto.generateUUID(instanceId))
+        assertEquals(expected, generateUUID(instanceId))
 
-        assertEquals(expected, Crypto.generateUUID(instanceId))
+        assertEquals(expected, generateUUID(instanceId))
     }
 }

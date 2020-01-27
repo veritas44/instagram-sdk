@@ -1,12 +1,15 @@
 package io.karn.instagram.common
 
+import io.karn.instagram.Instagram
 import io.karn.instagram.exceptions.InstagramAPIException
 import khttp.responses.Response
 import org.json.JSONObject
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-import java.util.*
+import java.util.ArrayDeque
+import java.util.Deque
+import java.util.UUID
 import javax.net.ssl.SSLException
 
 /**
@@ -20,6 +23,14 @@ internal fun <T : Response> wrapAPIException(block: () -> T): Pair<T?, Instagram
         // Ensure that the response is of type JSON before proceeding.
         if (!response.headers.any { it.value.contains("application/json") }) {
             return Pair(null, InstagramAPIException(response.statusCode, "Unable to parse JSON response."))
+        }
+
+        if (response.headers.containsKey("x-ig-set-www-claim")) {
+            Instagram.session.wwwClaim = response.headers["x-ig-set-www-claim"] ?: "0"
+        }
+
+        if (response.headers.containsKey("ig-set-x-mid")) {
+            Instagram.session.mid = response.headers["ig-set-x-mid"] ?: ""
         }
 
         return Pair(response, null)
@@ -52,6 +63,10 @@ class JsonObjectBuilder {
     infix fun <T> String.to(value: T) {
         deque.peek().put(this, value)
     }
+}
+
+fun generateUUID(seed: String): String {
+    return UUID.nameUUIDFromBytes(seed.toByteArray()).toString()
 }
 
 /**

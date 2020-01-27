@@ -51,6 +51,7 @@ android {
         ignoreFailures = false
     }
 
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 repositories {

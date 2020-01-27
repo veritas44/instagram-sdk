@@ -3,6 +3,7 @@ package io.karn.instagram.endpoints
 import io.karn.instagram.Instagram
 import io.karn.instagram.api.AuthenticationAPI
 import io.karn.instagram.common.Errors
+import io.karn.instagram.common.generateUUID
 import io.karn.instagram.common.wrapAPIException
 import io.karn.instagram.core.CookieUtils
 import io.karn.instagram.core.Crypto
@@ -61,7 +62,7 @@ class Authentication internal constructor() {
         }
 
         val data = JSONObject()
-                .put("adid", Crypto.generateUUID(Instagram.config.instanceId + "_adid"))
+                .put("adid", generateUUID(Instagram.session.instanceId + "_adid"))
 
         val signedData = Crypto.generateSignature(data.toString())
 
@@ -139,10 +140,8 @@ class Authentication internal constructor() {
         return when (res.statusCode) {
             200 -> {
                 when (res.jsonObject.optString("step_name")) {
-                    "verify_code" -> SyntheticResponse.AuthMethodSelectionResult.PhoneSelectionSuccess(res.jsonObject.optJSONObject("step_data")
-                            ?: JSONObject())
-                    "verify_email" -> SyntheticResponse.AuthMethodSelectionResult.EmailSelectionSuccess(res.jsonObject.optJSONObject("step_data")
-                            ?: JSONObject())
+                    "verify_code" -> SyntheticResponse.AuthMethodSelectionResult.PhoneSelectionSuccess(res.jsonObject.optJSONObject("step_data") ?: JSONObject())
+                    "verify_email" -> SyntheticResponse.AuthMethodSelectionResult.EmailSelectionSuccess(res.jsonObject.optJSONObject("step_data") ?: JSONObject())
                     else -> SyntheticResponse.AuthMethodSelectionResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.toString()))
                 }
             }
@@ -177,11 +176,8 @@ class Authentication internal constructor() {
     }
 
     private fun processLogin(username: String, password: String, token: String): SyntheticResponse.Auth {
-        Instagram.session.uuid = Crypto.generateUUID(Instagram.config.instanceId)
-
         // Generate the login payload.
-        val deviceId = Crypto.generateAndroidId(Instagram.config.instanceId)
-        Instagram.session.androidId = deviceId
+        val deviceId = Crypto.generateAndroidId(Instagram.session.instanceId)
 
         val data = Crypto.generateLoginPayload(token, username, password, 0, deviceId)
 
@@ -218,17 +214,12 @@ class Authentication internal constructor() {
     private fun buildSuccess(res: Response): JSONObject {
         Instagram.session.primaryKey = res.jsonObject.optJSONObject("logged_in_user").getString("pk")
         Instagram.session.cookieJar = res.cookies
-        Instagram.session.wwwClaim = res.headers["x-ig-set-www-claim"] ?: "0"
-        Instagram.session.authorization = res.headers["ig-set-authorization"] ?: ""
-
-        System.out.println(res.headers)
 
         val auth = res.jsonObject
         auth.put("primaryKey", Instagram.session.primaryKey)
         auth.put("cookie", CookieUtils.serializeToJson(res.cookies))
         auth.put("wwwClaim", Instagram.session.wwwClaim)
-        auth.put("authorization", Instagram.session.authorization)
-        auth.put("uuid", Instagram.session.uuid)
+        auth.put("mid", Instagram.session.mid)
 
         return auth
     }

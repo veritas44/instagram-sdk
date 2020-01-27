@@ -1,5 +1,6 @@
 package io.karn.instagram.api
 
+import io.karn.instagram.Instagram
 import io.karn.instagram.core.Crypto
 import io.karn.instagram.core.Endpoints
 import io.karn.instagram.core.Session
@@ -34,7 +35,7 @@ internal object AuthenticationAPI {
                 headers = Crypto.HEADERS,
                 params = mapOf(
                         "guid" to session.uuid,
-                        "device_id" to session.androidId
+                        "device_id" to Crypto.generateAndroidId(Instagram.session.instanceId)
                 ),
                 cookies = session.cookieJar)
     }
