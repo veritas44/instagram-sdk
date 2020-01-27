@@ -1,9 +1,9 @@
 package io.karn.instagram
 
+import androidx.test.core.app.ApplicationProvider
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 import kotlin.test.assertFails
 import kotlin.test.assertNotNull
 
@@ -27,8 +27,8 @@ class InitializationTest {
         }
 
         // Initialize the library
-        Instagram.init(RuntimeEnvironment.application) {
-            requestLogger = { response -> }
+        Instagram.init(ApplicationProvider.getApplicationContext()) {
+            requestLogger = { }
         }
 
         assertNotNull(Instagram.config)

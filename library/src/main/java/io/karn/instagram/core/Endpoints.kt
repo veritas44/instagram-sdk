@@ -4,6 +4,7 @@ internal object Endpoints {
     private const val API_URL = "https://i.instagram.com/api/v1"
     const val GRAPH_API_URL = "https://instagram.com/graphql/query"
 
+    const val LOG_ATTRIBUTION = "https://b.i.instagram.com/api/v1/attribution/log_attribution/"
     const val CSRF_TOKEN = "$API_URL/si/fetch_headers/"
     const val LOGIN = "$API_URL/accounts/login/"
     const val LOGIN_APPROVAL = "$API_URL/accounts/two_factor_login"

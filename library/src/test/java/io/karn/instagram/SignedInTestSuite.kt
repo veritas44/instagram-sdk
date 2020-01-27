@@ -1,5 +1,6 @@
 package io.karn.instagram
 
+import io.karn.instagram.endpoints.*
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 

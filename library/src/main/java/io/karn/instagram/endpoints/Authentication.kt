@@ -60,7 +60,12 @@ class Authentication internal constructor() {
             return processLogin(username, password, token)
         }
 
-        val (res, error) = wrapAPIException { AuthenticationAPI.getTokenForAuth() }
+        val data = JSONObject()
+                .put("adid", Crypto.generateUUID(Instagram.config.instanceId + "_adid"))
+
+        val signedData = Crypto.generateSignature(data.toString())
+
+        val (res, error) = wrapAPIException { AuthenticationAPI.getTokenForAuth(signedData) }
 
         res ?: return SyntheticResponse.Auth.TokenFailure(error!!.statusCode, error.statusMessage)
 
@@ -68,6 +73,8 @@ class Authentication internal constructor() {
             200 -> {
                 val newToken = AuthenticationAPI.parseCSRFToken(res).takeIf { !it.isNullOrBlank() || it != "null" }
                         ?: return SyntheticResponse.Auth.TokenFailure(412, res.text)
+
+                Instagram.session.cookieJar = res.cookies
 
                 processLogin(username, password, newToken)
             }
@@ -170,11 +177,11 @@ class Authentication internal constructor() {
     }
 
     private fun processLogin(username: String, password: String, token: String): SyntheticResponse.Auth {
-        Instagram.session.uuid = Crypto.generateUUID(true)
+        Instagram.session.uuid = Crypto.generateUUID(Instagram.config.instanceId)
 
         // Generate the login payload.
-        val deviceId = Crypto.generateDeviceId(username, password)
-        Instagram.session.deviceId = deviceId
+        val deviceId = Crypto.generateAndroidId(Instagram.config.instanceId)
+        Instagram.session.androidId = deviceId
 
         val data = Crypto.generateLoginPayload(token, username, password, 0, deviceId)
 
@@ -211,10 +218,16 @@ class Authentication internal constructor() {
     private fun buildSuccess(res: Response): JSONObject {
         Instagram.session.primaryKey = res.jsonObject.optJSONObject("logged_in_user").getString("pk")
         Instagram.session.cookieJar = res.cookies
+        Instagram.session.wwwClaim = res.headers["x-ig-set-www-claim"] ?: "0"
+        Instagram.session.authorization = res.headers["ig-set-authorization"] ?: ""
+
+        System.out.println(res.headers)
 
         val auth = res.jsonObject
         auth.put("primaryKey", Instagram.session.primaryKey)
         auth.put("cookie", CookieUtils.serializeToJson(res.cookies))
+        auth.put("wwwClaim", Instagram.session.wwwClaim)
+        auth.put("authorization", Instagram.session.authorization)
         auth.put("uuid", Instagram.session.uuid)
 
         return auth

@@ -1,5 +1,7 @@
-package io.karn.instagram
+package io.karn.instagram.endpoints
 
+import io.karn.instagram.Instagram
+import io.karn.instagram.TestBase
 import io.karn.instagram.core.SyntheticResponse
 import org.junit.Ignore
 import org.junit.Test

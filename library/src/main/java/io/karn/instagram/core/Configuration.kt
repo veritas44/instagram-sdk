@@ -1,5 +1,6 @@
 package io.karn.instagram.core
 
+import io.karn.instagram.BuildConfig
 import io.karn.instagram.HttpResponse
 
 
@@ -16,6 +17,10 @@ data class Configuration(
          * Specify the device resolution to ensure that the API serves the correct asset dimensions.
          */
         internal val deviceResolution: String = Crypto.DISPLAY_RESOLUTION,
+        /**
+         * The instance ID that is used to generate the device uuid and the android-id
+         */
+        var instanceId: String = "insights-${BuildConfig.VERSION_NAME}",
         /**
          * Attach a logger to process API calls.
          *

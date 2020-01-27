@@ -3,22 +3,17 @@ package io.karn.instagram.api
 import io.karn.instagram.core.Crypto
 import io.karn.instagram.core.Endpoints
 import io.karn.instagram.core.Session
-import io.karn.instagram.endpoints.Authentication
 import khttp.get
 import khttp.post
 import khttp.responses.Response
-import khttp.structures.cookie.CookieJar
 
 internal object AuthenticationAPI {
 
-    fun getTokenForAuth(): Response {
-        return get(url = Endpoints.CSRF_TOKEN,
-                params = mapOf(
-                        "challenge_type" to "signup",
-                        "guid" to Crypto.generateUUID(false)
-                ),
+    fun getTokenForAuth(data: String): Response {
+        return get(url = Endpoints.LOG_ATTRIBUTION,
                 headers = Crypto.HEADERS,
-                allowRedirects = true)
+                allowRedirects = true,
+                data = data)
     }
 
     fun login(data: String): Response {
@@ -39,7 +34,7 @@ internal object AuthenticationAPI {
                 headers = Crypto.HEADERS,
                 params = mapOf(
                         "guid" to session.uuid,
-                        "device_id" to session.deviceId
+                        "device_id" to session.androidId
                 ),
                 cookies = session.cookieJar)
     }

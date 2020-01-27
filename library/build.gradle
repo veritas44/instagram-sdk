@@ -65,6 +65,7 @@ dependencies {
     // Http Library
     implementation config.deps.khttp
 
+    testImplementation config.testDeps.androidx.core
     testImplementation config.testDeps.kotlin_test
     testImplementation config.testDeps.junit
     testImplementation config.testDeps.robolectric
