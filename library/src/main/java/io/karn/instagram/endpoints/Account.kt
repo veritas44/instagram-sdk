@@ -9,7 +9,7 @@ import io.karn.instagram.exceptions.InstagramAPIException
 import org.json.JSONArray
 import org.json.JSONObject
 
-class Account internal constructor() {
+class Account internal constructor(private val instagram: Instagram) {
 
     /**
      * Create a SyntheticResponse from the response of a profile API request.
@@ -18,7 +18,7 @@ class Account internal constructor() {
      * @return  A [SyntheticResponse.AccountDetails] object.
      */
     fun getAccount(userKey: String): SyntheticResponse.AccountDetails {
-        val (res, error) = wrapAPIException { AccountAPI.accountInfo(userKey, Instagram.session) }
+        val (res, error) = wrapAPIException { AccountAPI.accountInfo(instagram.session, userKey) }
 
         res ?: return SyntheticResponse.AccountDetails.Failure(error!!)
 
@@ -38,12 +38,12 @@ class Account internal constructor() {
      * @return  A [SyntheticResponse.ProfileFeed] object.
      */
     fun getFeed(userKey: String, maxId: String = "", minTimestamp: String = ""): SyntheticResponse.ProfileFeed {
-        val (res, error) = wrapAPIException { AccountAPI.feed(userKey, maxId, minTimestamp, Instagram.session) }
+        val (res, error) = wrapAPIException { AccountAPI.feed(instagram.session, userKey, maxId, minTimestamp) }
 
         res ?: return SyntheticResponse.ProfileFeed.Failure(error!!)
 
         return when (res.statusCode) {
-            200 -> SyntheticResponse.ProfileFeed.Success(res.jsonObject.optString("next_max_id", ""),res.jsonObject.optJSONArray("items") ?: JSONArray())
+            200 -> SyntheticResponse.ProfileFeed.Success(res.jsonObject.optString("next_max_id", ""), res.jsonObject.optJSONArray("items") ?: JSONArray())
             else -> SyntheticResponse.ProfileFeed.Failure(InstagramAPIException(res.statusCode, res.text))
         }
     }
@@ -69,7 +69,7 @@ class Account internal constructor() {
             getRelationship(Endpoints.FOLLOWING, userKey, maxId)
 
     private fun getRelationship(endpoint: String, primaryKey: String, maxId: String): SyntheticResponse.Relationships {
-        val (res, error) = wrapAPIException { AccountAPI.relationships(endpoint, primaryKey, maxId, Instagram.session) }
+        val (res, error) = wrapAPIException { AccountAPI.relationships(instagram.session, endpoint, primaryKey, maxId) }
 
         res ?: return SyntheticResponse.Relationships.Failure(error!!)
 
@@ -101,7 +101,7 @@ class Account internal constructor() {
             updateRelationship(Endpoints.UNFOLLOW, userKey)
 
     private fun updateRelationship(endpoint: String, userKey: String): SyntheticResponse.RelationshipUpdate {
-        val (res, error) = wrapAPIException { AccountAPI.updateRelationship(endpoint, userKey, Instagram.session) }
+        val (res, error) = wrapAPIException { AccountAPI.updateRelationship(instagram.session, endpoint, userKey) }
 
         res ?: return SyntheticResponse.RelationshipUpdate.Failure(error!!)
 
@@ -117,7 +117,7 @@ class Account internal constructor() {
      * @return  A [SyntheticResponse.Blocks] object.
      */
     fun getBlocked(): SyntheticResponse.Blocks {
-        val (res, error) = wrapAPIException { AccountAPI.blockedAccounts(Instagram.session) }
+        val (res, error) = wrapAPIException { AccountAPI.blockedAccounts(instagram.session) }
 
         res ?: return SyntheticResponse.Blocks.Failure(error!!)
 

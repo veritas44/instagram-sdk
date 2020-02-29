@@ -8,7 +8,7 @@ import io.karn.instagram.core.SyntheticResponse
 import io.karn.instagram.exceptions.InstagramAPIException
 import org.json.JSONArray
 
-class DirectMessages internal constructor() {
+class DirectMessages internal constructor(private val instagram: Instagram) {
 
     /**
      * Create a SyntheticResponse from the response of a direct messages lookup API request.
@@ -17,7 +17,7 @@ class DirectMessages internal constructor() {
      * @return  A {@link SyntheticResponse.DirectMessages} object.
      */
     fun get(maxId: String = ""): SyntheticResponse.DirectMessages {
-        val (res, error) = wrapAPIException { DirectMessagesAPI.getMessages(maxId, Instagram.session) }
+        val (res, error) = wrapAPIException { DirectMessagesAPI.getMessages(instagram.session, maxId) }
 
         res ?: return SyntheticResponse.DirectMessages.Failure(error!!)
 

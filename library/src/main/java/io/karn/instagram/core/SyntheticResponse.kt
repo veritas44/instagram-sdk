@@ -6,6 +6,12 @@ import org.json.JSONObject
 
 sealed class SyntheticResponse {
 
+    sealed class Bootstrap : SyntheticResponse() {
+        data class Success(val data: JSONObject) : Bootstrap()
+
+        data class Failure(val exception: InstagramAPIException) : Bootstrap()
+    }
+
     sealed class Auth : SyntheticResponse() {
         data class Success(val data: JSONObject) : Auth()
 
@@ -86,6 +92,12 @@ sealed class SyntheticResponse {
         data class Success(val nextMaxId: String, val feed: JSONArray) : ProfileFeed()
 
         data class Failure(val exception: InstagramAPIException) : ProfileFeed()
+    }
+
+    sealed class MediaInfo : SyntheticResponse() {
+        data class Success(val info: JSONObject) : MediaInfo()
+
+        data class Failure(val exception: InstagramAPIException) : MediaInfo()
     }
 
     sealed class MediaLikes : SyntheticResponse() {

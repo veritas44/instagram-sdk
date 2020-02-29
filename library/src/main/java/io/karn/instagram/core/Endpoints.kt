@@ -1,8 +1,13 @@
 package io.karn.instagram.core
 
 internal object Endpoints {
+    private const val IG_URL = "https://www.instagram.com"
     private const val API_URL = "https://i.instagram.com/api/v1"
+    private const val BOOTSTRAP_API_URL = "https://b.i.instagram.com/api/v1"
     const val GRAPH_API_URL = "https://instagram.com/graphql/query"
+
+    const val MSISDN_HEADER_BOOTSTRAP = "$BOOTSTRAP_API_URL/accounts/msisdn_header_bootstrap/"
+    const val LAUNCHER_SYNC = "$BOOTSTRAP_API_URL/launcher/sync/"
 
     const val CSRF_TOKEN = "$API_URL/si/fetch_headers/"
     const val LOGIN = "$API_URL/accounts/login/"
@@ -21,6 +26,7 @@ internal object Endpoints {
 
     const val STORIES = "$API_URL/feed/user/%s/story/"
 
+    const val MEDIA_INFO = "$IG_URL/p/%s/?__a=1"
     const val MEDIA_LIKES = "$API_URL/media/%s/likers/"
     const val MEDIA_COMMENTS = "$API_URL/media/%s/comments/"
 

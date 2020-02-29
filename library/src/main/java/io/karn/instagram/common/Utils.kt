@@ -6,7 +6,9 @@ import org.json.JSONObject
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-import java.util.*
+import java.util.ArrayDeque
+import java.util.Deque
+import java.util.UUID
 import javax.net.ssl.SSLException
 
 /**
@@ -34,6 +36,10 @@ internal fun <T : Response> wrapAPIException(block: () -> T): Pair<T?, Instagram
     }
 
     return Pair(null, error)
+}
+
+fun generateUUID(seed: String): String {
+    return UUID.nameUUIDFromBytes(seed.toByteArray()).toString()
 }
 
 fun json(build: JsonObjectBuilder.() -> Unit): JSONObject {

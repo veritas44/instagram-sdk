@@ -1,19 +1,18 @@
 package io.karn.instagram.api
 
-import io.karn.instagram.core.Crypto
 import io.karn.instagram.core.Endpoints
 import io.karn.instagram.core.Session
 import khttp.get
 
-internal object SearchAPI {
+internal object SearchAPI : API() {
 
-    fun search(query: String, session: Session) =
+    fun search(session: Session, query: String) =
             get(url = Endpoints.SEARCH,
                     params = mapOf(
-                            "rank_token" to "${session.primaryKey}_${session.uuid}",
+                            "rank_token" to session.rankToken,
                             "is_typeahead" to "false",
                             "query" to query
                     ),
-                    headers = Crypto.HEADERS,
+                    headers = getRequestHeaders(session),
                     cookies = session.cookieJar)
 }

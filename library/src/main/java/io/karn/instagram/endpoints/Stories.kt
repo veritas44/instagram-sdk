@@ -7,7 +7,7 @@ import io.karn.instagram.core.SyntheticResponse
 import io.karn.instagram.exceptions.InstagramAPIException
 import org.json.JSONArray
 
-class Stories internal constructor() {
+class Stories internal constructor(private val instagram: Instagram) {
 
     /**
      * Create a SyntheticResponse from the response of a story reel API request.
@@ -16,7 +16,7 @@ class Stories internal constructor() {
      * @return  A {@link SyntheticResponse.StoryReel} object.
      */
     fun getStories(userKey: String): SyntheticResponse.StoryReel {
-        val (res, error) = wrapAPIException { StoriesAPI.getStories(userKey, Instagram.session) }
+        val (res, error) = wrapAPIException { StoriesAPI.getStories(instagram.session, userKey) }
 
         res ?: return SyntheticResponse.StoryReel.Failure(error!!)
 

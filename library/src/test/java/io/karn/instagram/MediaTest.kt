@@ -12,6 +12,14 @@ class MediaTest : TestBase() {
     val mediaKey = "1846492913375143728"
 
     @Test
+    fun validateMediaFromShortKey() {
+        val res = Instagram.getInstance().media.getMediaFromShortKey("B8b2CVngQNQ")
+
+        assert(res is SyntheticResponse.MediaInfo.Success)
+    }
+
+
+    @Test
     fun validateMediaLikes() {
         val res = Instagram.getInstance().media.getLikes(mediaKey)
 

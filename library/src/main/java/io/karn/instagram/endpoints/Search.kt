@@ -8,7 +8,7 @@ import io.karn.instagram.core.SyntheticResponse
 import io.karn.instagram.exceptions.InstagramAPIException
 import org.json.JSONArray
 
-class Search internal constructor() {
+class Search internal constructor(private val instagram: Instagram) {
 
     /**
      * Create a SyntheticResponse from the response of a profile search API request.
@@ -17,7 +17,7 @@ class Search internal constructor() {
      * @return  A {@link SyntheticResponse.ProfileSearch} object.
      */
     fun search(query: String): SyntheticResponse.ProfileSearch {
-        val (res, error) = wrapAPIException { SearchAPI.search(query, Instagram.session) }
+        val (res, error) = wrapAPIException { SearchAPI.search(instagram.session, query) }
 
         res ?: return SyntheticResponse.ProfileSearch.Failure(error!!)
 

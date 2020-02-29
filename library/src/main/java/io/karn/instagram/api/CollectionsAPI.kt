@@ -1,19 +1,18 @@
 package io.karn.instagram.api
 
-import io.karn.instagram.core.Crypto
 import io.karn.instagram.core.Endpoints
 import io.karn.instagram.core.Session
 import khttp.get
 
-internal object CollectionsAPI {
+internal object CollectionsAPI : API() {
 
     fun listCollections(session: Session) =
             get(url = Endpoints.COLLECTIONS_LIST,
-                    headers = Crypto.HEADERS,
+                    headers = getRequestHeaders(session),
                     cookies = session.cookieJar)
 
-    fun getCollection(collectionId: String, session: Session) =
+    fun getCollection(session: Session, collectionId: String) =
             get(url = "${Endpoints.COLLECTIONS_LIST}$collectionId",
-                    headers = Crypto.HEADERS,
+                    headers = getRequestHeaders(session),
                     cookies = session.cookieJar)
 }

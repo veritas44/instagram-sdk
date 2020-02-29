@@ -40,6 +40,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
     lintOptions {
         abortOnError false
     }
@@ -66,6 +70,7 @@ dependencies {
     implementation config.deps.khttp
 
     testImplementation config.testDeps.kotlin_test
+    testImplementation config.testDeps.androidx.core
     testImplementation config.testDeps.junit
     testImplementation config.testDeps.robolectric
 }

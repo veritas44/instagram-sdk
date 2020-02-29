@@ -17,14 +17,14 @@ class AccountTest : TestBase() {
 
     @Test
     fun validateSignedInUserInformation() {
-        val res = Instagram.getInstance().account.getAccount(Instagram.session.primaryKey)
+        val res = Instagram.getInstance().account.getAccount(Instagram.getInstance().session.primaryKey)
 
         assertTrue(res is SyntheticResponse.AccountDetails.Success)
     }
 
     @Test
     fun validateSingedInUserFeed() {
-        val res = Instagram.getInstance().account.getFeed(Instagram.session.primaryKey)
+        val res = Instagram.getInstance().account.getFeed(Instagram.getInstance().session.primaryKey)
 
         System.out.println(res)
 
@@ -35,7 +35,7 @@ class AccountTest : TestBase() {
 
     @Test
     fun validateFollowers() {
-        val res = Instagram.getInstance().account.getFollowers(Instagram.session.primaryKey)
+        val res = Instagram.getInstance().account.getFollowers(Instagram.getInstance().session.primaryKey)
 
         System.out.println(res)
 
@@ -45,7 +45,7 @@ class AccountTest : TestBase() {
 
     @Test
     fun validateFollowing() {
-        val res = Instagram.getInstance().account.getFollowing(Instagram.session.primaryKey)
+        val res = Instagram.getInstance().account.getFollowing(Instagram.getInstance().session.primaryKey)
 
         System.out.println(res)
 

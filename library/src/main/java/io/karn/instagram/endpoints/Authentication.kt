@@ -2,9 +2,9 @@ package io.karn.instagram.endpoints
 
 import io.karn.instagram.Instagram
 import io.karn.instagram.api.AuthenticationAPI
+import io.karn.instagram.api.AuthenticationBootstrapAPI
 import io.karn.instagram.common.Errors
 import io.karn.instagram.common.wrapAPIException
-import io.karn.instagram.core.CookieUtils
 import io.karn.instagram.core.Crypto
 import io.karn.instagram.core.SyntheticResponse
 import io.karn.instagram.exceptions.InstagramAPIException
@@ -37,12 +37,44 @@ import org.json.JSONObject
  *   - InvalidCredentials ->
  *   - ApiFailure ->
  */
-class Authentication internal constructor() {
+class Authentication internal constructor(private val instagram: Instagram) {
 
     companion object {
         const val AUTH_METHOD_EMAIL = "email"
         const val AUTH_METHOD_PHONE = "phone"
     }
+
+    fun bootstrap(): SyntheticResponse.Bootstrap {
+
+        val headerData = JSONObject()
+                .put("mobile_subno_usage", "ig_select_app")
+                .put("device_id", instagram.session.uuid)
+
+        val (headersRes, headersErr) = wrapAPIException { AuthenticationBootstrapAPI.getHeaders(instagram.session, headerData) }
+
+        headersRes ?: return SyntheticResponse.Bootstrap.Failure(headersErr!!)
+
+        println("csrf: ${instagram.session.csrfToken}")
+        println("headers: ${headersRes.headers}")
+
+        val syncData = JSONObject()
+                .put("csrftoken", instagram.session.csrfToken)
+                .put("id", instagram.session.uuid)
+                .put("server_config_retrieval", "1")
+
+        val (syncRes, syncErr) = wrapAPIException { AuthenticationBootstrapAPI.getSync(instagram.session, syncData) }
+
+        syncRes ?: return SyntheticResponse.Bootstrap.Failure(syncErr!!)
+
+        println("headers: ${syncRes.headers}")
+
+        if (instagram.session.csrfToken.isBlank()) {
+            return SyntheticResponse.Bootstrap.Failure(InstagramAPIException(412, "Unable to fetch token for use"))
+        }
+
+        return SyntheticResponse.Bootstrap.Success(JSONObject().put("token", instagram.session.csrfToken))
+    }
+
 
     /**
      * Creates a SyntheticResponse from the response of a authentication API request.
@@ -54,24 +86,15 @@ class Authentication internal constructor() {
      * @param token     An optional auth token to skip the CSRF token phase.
      * @return  A [SyntheticResponse.Auth] object.
      */
-    fun authenticate(username: String, password: String, token: String? = null): SyntheticResponse.Auth {
-        if (!token.isNullOrBlank()) {
+    fun authenticate(username: String, password: String, token: String = instagram.session.csrfToken): SyntheticResponse.Auth {
+        if (!token.isBlank()) {
             // Go straight to login.
             return processLogin(username, password, token)
         }
 
-        val (res, error) = wrapAPIException { AuthenticationAPI.getTokenForAuth() }
-
-        res ?: return SyntheticResponse.Auth.TokenFailure(error!!.statusCode, error.statusMessage)
-
-        return when (res.statusCode) {
-            200 -> {
-                val newToken = AuthenticationAPI.parseCSRFToken(res).takeIf { !it.isNullOrBlank() || it != "null" }
-                        ?: return SyntheticResponse.Auth.TokenFailure(412, res.text)
-
-                processLogin(username, password, newToken)
-            }
-            else -> SyntheticResponse.Auth.TokenFailure(res.statusCode, res.text)
+        return when (val res = bootstrap()) {
+            is SyntheticResponse.Bootstrap.Success -> authenticate(username, password, res.data.optString("token"))
+            is SyntheticResponse.Bootstrap.Failure -> SyntheticResponse.Auth.TokenFailure(res.exception.statusCode, res.exception.statusMessage)
         }
     }
 
@@ -80,15 +103,14 @@ class Authentication internal constructor() {
      *
      * @param code          The two factor code that was sent to the user's phone/email.
      * @param identifier    The two factor login identifier token.
-     * @param deviceId      The generated device ID associated with this session.
      * @param username      The username of the account that is being authenticated. See: [authenticate]
      * @param password      The password of the account that is being authenticated. See: [authenticate]
      * @return A [SyntheticResponse.TwoFactorResult] object.
      */
-    fun twoFactorLogin(code: String, identifier: String, token: String, deviceId: String, username: String, password: String): SyntheticResponse.TwoFactorResult {
-        val data = Crypto.generateTwoFactorPayload(code.replace("\\s".toRegex(), ""), identifier, token, username, password, deviceId)
+    fun twoFactorLogin(code: String, identifier: String, token: String, username: String, password: String): SyntheticResponse.TwoFactorResult {
+        val data = Crypto.generateTwoFactorPayload(instagram.session, code.replace("\\s".toRegex(), ""), identifier, token, username, password)
 
-        val (res, error) = wrapAPIException { AuthenticationAPI.twoFactor(data) }
+        val (res, error) = wrapAPIException { AuthenticationAPI.twoFactor(instagram.session, data) }
 
         res ?: return SyntheticResponse.TwoFactorResult.Failure(error!!)
 
@@ -104,7 +126,7 @@ class Authentication internal constructor() {
      * @param path  The path of the auth challenge API as returned from the corresponding sentry.
      */
     fun prepareAuthChallenge(path: String): SyntheticResponse.ChallengeResult {
-        val (res, error) = wrapAPIException { AuthenticationAPI.prepareAuthChallenge(path, Instagram.session) }
+        val (res, error) = wrapAPIException { AuthenticationAPI.prepareAuthChallenge(instagram.session, path) }
 
         res ?: return SyntheticResponse.ChallengeResult.Failure(error!!)
 
@@ -121,11 +143,11 @@ class Authentication internal constructor() {
     }
 
     fun selectAuthChallengeMethod(path: String, method: String): SyntheticResponse.AuthMethodSelectionResult {
-        val data = Crypto.generateAuthenticatedChallengeParams(Instagram.session) {
+        val data = Crypto.generateAuthenticatedChallengeParams(instagram.session) {
             it.put("choice", if (AUTH_METHOD_PHONE == method) 0 else 1)
         }
 
-        val (res, error) = wrapAPIException { AuthenticationAPI.selectAuthChallengeMethod(path, data, Instagram.session) }
+        val (res, error) = wrapAPIException { AuthenticationAPI.selectAuthChallengeMethod(instagram.session, path, data) }
 
         res ?: return SyntheticResponse.AuthMethodSelectionResult.Failure(error!!)
 
@@ -144,22 +166,28 @@ class Authentication internal constructor() {
     }
 
     fun submitChallengeCode(path: String, code: String): SyntheticResponse.ChallengeCodeSubmitResult {
-        val data = Crypto.generateAuthenticatedChallengeParams(Instagram.session) {
+        val data = Crypto.generateAuthenticatedChallengeParams(instagram.session) {
             it.put("security_code", code)
         }
 
-        val (res, error) = wrapAPIException { AuthenticationAPI.submitAuthChallenge(path, data, Instagram.session) }
+        val (res, error) = wrapAPIException { AuthenticationAPI.submitAuthChallenge(instagram.session, path, data) }
 
         res ?: return SyntheticResponse.ChallengeCodeSubmitResult.Failure(error!!)
 
         return when (res.statusCode) {
-            200 -> SyntheticResponse.ChallengeCodeSubmitResult.Success(buildSuccess(res))
+            200 -> {
+                if (res.jsonObject.optString("logged_in_user").isNullOrBlank()) {
+                    SyntheticResponse.ChallengeCodeSubmitResult.Failure(InstagramAPIException(412, res.jsonObject.toString()))
+                } else {
+                    SyntheticResponse.ChallengeCodeSubmitResult.Success(buildSuccess(res))
+                }
+            }
             else -> SyntheticResponse.ChallengeCodeSubmitResult.Failure(InstagramAPIException(res.statusCode, res.jsonObject.optString("message", Errors.ERROR_UNKNOWN)))
         }
     }
 
     fun logoutUser(): SyntheticResponse.Logout {
-        val (res, error) = wrapAPIException { AuthenticationAPI.logout(Instagram.session) }
+        val (res, error) = wrapAPIException { AuthenticationAPI.logout(instagram.session) }
 
         res ?: return SyntheticResponse.Logout.Failure(error!!)
 
@@ -170,36 +198,31 @@ class Authentication internal constructor() {
     }
 
     private fun processLogin(username: String, password: String, token: String): SyntheticResponse.Auth {
-        Instagram.session.uuid = Crypto.generateUUID(true)
-
         // Generate the login payload.
-        val deviceId = Crypto.generateDeviceId(username, password)
-        Instagram.session.deviceId = deviceId
+        val data = Crypto.generateLoginPayload(instagram.session, token, username, password, 1)
 
-        val data = Crypto.generateLoginPayload(token, username, password, 0, deviceId)
-
-        val (res, error) = wrapAPIException { AuthenticationAPI.login(data) }
+        val (res, error) = wrapAPIException { AuthenticationAPI.login(instagram.session, data) }
 
         res ?: return SyntheticResponse.Auth.Failure(error!!)
 
         return when (res.statusCode) {
             200 -> SyntheticResponse.Auth.Success(buildSuccess(res))
             400 -> {
-                Instagram.session.cookieJar = res.cookies
+                // println(res.jsonObject.toString(4))
 
                 when {
                     res.jsonObject.optBoolean("two_factor_required") -> {
                         // User requires two factor.
                         SyntheticResponse.Auth.TwoFactorRequired(res.jsonObject
                                 .put("token", token)
-                                .put("device_id", deviceId))
+                                .put("device_id", instagram.session.androidId))
                     }
                     res.jsonObject.has("challenge") -> {
                         // User needs to pass challenge
                         SyntheticResponse.Auth.ChallengeRequired(res.jsonObject.getJSONObject("challenge"))
                     }
                     res.jsonObject.optBoolean("invalid_credentials") -> {
-                        SyntheticResponse.Auth.InvalidCredentials(res.jsonObject.optString("message", Errors.ERROR_UNKNOWN))
+                        SyntheticResponse.Auth.InvalidCredentials(Errors.ERROR_INVALID_CREDENTIALS)
                     }
                     else -> SyntheticResponse.Auth.Failure(InstagramAPIException(res.statusCode, res.text))
                 }
@@ -209,14 +232,8 @@ class Authentication internal constructor() {
     }
 
     private fun buildSuccess(res: Response): JSONObject {
-        Instagram.session.primaryKey = res.jsonObject.optJSONObject("logged_in_user").getString("pk")
-        Instagram.session.cookieJar = res.cookies
+        instagram.session = instagram.session.copy(primaryKey = res.jsonObject.optJSONObject("logged_in_user")?.optString("pk") ?: "")
 
-        val auth = res.jsonObject
-        auth.put("primaryKey", Instagram.session.primaryKey)
-        auth.put("cookie", CookieUtils.serializeToJson(res.cookies))
-        auth.put("uuid", Instagram.session.uuid)
-
-        return auth
+        return res.jsonObject.put("sdk_data", instagram.session.serialize())
     }
 }
