@@ -106,7 +106,7 @@ internal object CryptoUtils {
                 .replace(PUBLIC_RSA_SUFFIX, "")
     }
 
-    internal fun encryptRSA(key: String, value: ByteArray): ByteArray? {
+    private fun encryptRSA(key: String, value: ByteArray): ByteArray? {
         val rsaKey = getRSAPublicKey(key)
 
         val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
