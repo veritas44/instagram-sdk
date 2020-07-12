@@ -13,13 +13,10 @@ import org.json.JSONObject
  */
 data class Session internal constructor(
         internal var instanceId: String = "insights-${BuildConfig.VERSION_NAME}",
-        internal var primaryKey: String = "",
-        internal var csrfToken: String = "",
-        internal var midToken: String = "",
-        internal var claimToken: String = "",
+        internal var claimToken: String = "0",
         internal var authorizationToken: String = "",
-        internal var publicKeyId: Int = 205,
-        internal var publicKey: String = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF1enRZOEZvUlRGRU9mK1RkTGlUdAplN3FIQXY1cmdBMmk5RkQ0YjgzZk1GK3hheW14b0xSdU5KTitRanJ3dnBuSm1LQ0QxNGd3K2w3TGQ0RHkvRHVFCkRiZlpKcmRRWkJIT3drS3RqdDdkNWlhZFdOSjdLczlBM0NNbzB5UktyZFBGU1dsS21lQVJsTlFrVXF0YkNmTzcKT2phY3ZYV2dJcGlqTkdJRVk4UkdzRWJWZmdxSmsrZzhuQWZiT0xjNmEwbTMxckJWZUJ6Z0hkYWExeFNKOGJHcQplbG4zbWh4WDU2cmpTOG5LZGk4MzRZSlNaV3VxUHZmWWUrbEV6Nk5laU1FMEo3dE80eWxmeWlPQ05ycnF3SnJnCjBXWTFEeDd4MHlZajdrN1NkUWVLVUVaZ3FjNUFuVitjNUQ2SjJTSTlGMnNoZWxGNWVvZjJOYkl2TmFNakpSRDgKb1FJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==",
+        internal var publicKeyId: Int = 209,
+        internal var publicKey: String = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFvSkw5RGQzdWliYmRlOWJVYXlDOQpIMXVJb0RsL3BxeEd3Yjd3dGx6cjRSODhwbGI0SUs1aEdUQ2VTN0xUTXBUNk5oWVFGT2VhajhtcitjVlp1Y1FuCmxQUVNiZTJpM3lIbU9DV2h6L0s0WStzRU1lYmJvZUpuZHpPODFPVVhkUjNZWVN3STJTSFdYTTB0VnhRQjlmZjYKZW0xU3QrSkF6MnhhMDBBMTFod1BraUpIOTdGbU54eWlqL2wrcEdEbXJCQUVLbFNMUzQvdGhGNUNmMEpIVFFwbwpDUkU3VjJDaEtTRlQzNVIvY01TdHR2ekdoQ2dtY1Z5M092aTR5d0VCSkpoTGVrQmV1cG5OWTUvL08rOUxobEhwCmVIcVN1cG9MazZSbDhtTGJkK3ptWTRoWVRzeExDRnpQcDJNSGI1NXZ5eWMxRTdJK1RjcVNXMjFQemlyNWFQcWwKYlFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==",
         internal var cookieJar: CookieJar = CookieJar()
 ) {
     internal val deviceDPI get() = Instagram.instance.configuration.deviceDPI
@@ -36,13 +33,14 @@ data class Session internal constructor(
 
     internal val pigeonSessionId = Crypto.generateTemporaryGUID("pigeonSessionId", uuid, 1200000f)
 
-    internal val rankToken get() = "${primaryKey}_${uuid}"
+    internal val rankToken get() = "${dsUserId}_${uuid}"
+
+    internal val dsUserId get() = cookieJar.getCookie("ds_user_id")?.value?.toString() ?: ""
+    internal val csrfToken get() = cookieJar.getCookie("csrftoken")?.value?.toString() ?: ""
+    internal val midToken get() = cookieJar.getCookie("mid")?.value?.toString() ?: ""
 
     fun serialize(): String {
         val data = JSONObject()
-                .put("primaryKey", primaryKey)
-                .put("csrfToken", csrfToken)
-                .put("midToken", midToken)
                 .put("claimToken", claimToken)
                 .put("authorizationToken", authorizationToken)
                 .put("cookies", CookieUtils.serializeToJson(cookieJar))

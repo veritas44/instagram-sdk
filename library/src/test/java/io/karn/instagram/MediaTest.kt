@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 @RunWith(RobolectricTestRunner::class)
 class MediaTest : TestBase() {
 
-    val mediaKey = "1846492913375143728"
+    private val mediaKey = "1846492913375143728"
 
     @Test
     fun validateMediaFromShortKey() {
@@ -23,7 +23,7 @@ class MediaTest : TestBase() {
     fun validateMediaLikes() {
         val res = Instagram.getInstance().media.getLikes(mediaKey)
 
-        System.out.println(res)
+        println(res)
 
         assertTrue(res is SyntheticResponse.MediaLikes.Success)
         assertTrue(res.likes.length() > 0)

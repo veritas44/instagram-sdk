@@ -40,39 +40,113 @@ import org.json.JSONObject
 class Authentication internal constructor(private val instagram: Instagram) {
 
     companion object {
+        private const val EXPERIMENTS = "ig_growth_android_profile_pic_prefill_with_fb_pic_2,ig_android_email_fuzzy_matching_universe,ig_android_recovery_one_tap_holdout_universe,ig_android_gmail_oauth_in_reg,ig_android_reg_modularization_universe,ig_android_sim_info_upload,ig_android_device_verification_fb_signup,ig_android_reg_nux_headers_cleanup_universe,ig_android_direct_main_tab_universe_v2,ig_android_sign_in_help_only_one_account_family_universe,ig_android_account_linking_upsell_universe,ig_android_enable_keyboardlistener_redesign,ig_android_suma_landing_page,ig_android_notification_unpack_universe,ig_android_access_flow_prefill,ig_android_shortcuts_2019,ig_android_ask_for_permissions_on_reg,ig_android_device_based_country_verification,ig_account_identity_logged_out_signals_global_holdout_universe,ig_video_debug_overlay,ig_android_caption_typeahead_fix_on_o_universe,ig_android_retry_create_account_universe,ig_android_video_ffmpegutil_pts_fix,ig_android_quickcapture_keep_screen_on,ig_android_smartlock_hints_universe,ig_android_login_identifier_fuzzy_match,ig_android_passwordless_account_password_creation_universe,ig_android_black_out_toggle_universe,ig_android_security_intent_switchoff,ig_android_mobile_http_flow_device_universe,ig_android_get_cookie_with_concurrent_session_universe,ig_android_multi_tap_login_new,ig_android_nux_add_email_device,ig_android_device_info_foreground_reporting,ig_android_fb_account_linking_sampling_freq_universe,ig_android_vc_interop_use_test_igid_universe,ig_android_device_verification_separate_endpoint,ig_assisted_login_universe,ig_android_video_render_codec_low_memory_gc,ig_android_device_detection_info_upload,ig_android_direct_add_direct_to_android_native_photo_share_sheet,ig_android_sms_retriever_backtest_universe"
+
         const val AUTH_METHOD_EMAIL = "email"
         const val AUTH_METHOD_PHONE = "phone"
     }
 
     fun bootstrap(): SyntheticResponse.Bootstrap {
 
-        val headerData = JSONObject()
-                .put("mobile_subno_usage", "ig_select_app")
-                .put("device_id", instagram.session.uuid)
+        // Token
+        val (tokenRes, tokenErr) = wrapAPIException { AuthenticationBootstrapAPI.getToken(instagram.session) }
+        tokenRes ?: return SyntheticResponse.Bootstrap.Failure(tokenErr!!)
 
-        val (headersRes, headersErr) = wrapAPIException { AuthenticationBootstrapAPI.getHeaders(instagram.session, headerData) }
-
-        headersRes ?: return SyntheticResponse.Bootstrap.Failure(headersErr!!)
-
-        println("csrf: ${instagram.session.csrfToken}")
-        println("headers: ${headersRes.headers}")
-
-        val syncData = JSONObject()
-                .put("csrftoken", instagram.session.csrfToken)
+        // QE sync
+        var data = JSONObject()
                 .put("id", instagram.session.uuid)
                 .put("server_config_retrieval", "1")
 
-        val (syncRes, syncErr) = wrapAPIException { AuthenticationBootstrapAPI.getSync(instagram.session, syncData) }
-
+        val (syncRes, syncErr) = wrapAPIException { AuthenticationBootstrapAPI.sync(instagram.session, data) }
         syncRes ?: return SyntheticResponse.Bootstrap.Failure(syncErr!!)
 
-        println("headers: ${syncRes.headers}")
+        // Store the first set of cookies here
+        instagram.session.publicKeyId = syncRes.headers.getOrElse("ig-set-password-encryption-key-id") { "209" }.toInt()
+        instagram.session.publicKey = syncRes.headers.getOrElse("ig-set-password-encryption-pub-key") { "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFvSkw5RGQzdWliYmRlOWJVYXlDOQpIMXVJb0RsL3BxeEd3Yjd3dGx6cjRSODhwbGI0SUs1aEdUQ2VTN0xUTXBUNk5oWVFGT2VhajhtcitjVlp1Y1FuCmxQUVNiZTJpM3lIbU9DV2h6L0s0WStzRU1lYmJvZUpuZHpPODFPVVhkUjNZWVN3STJTSFdYTTB0VnhRQjlmZjYKZW0xU3QrSkF6MnhhMDBBMTFod1BraUpIOTdGbU54eWlqL2wrcEdEbXJCQUVLbFNMUzQvdGhGNUNmMEpIVFFwbwpDUkU3VjJDaEtTRlQzNVIvY01TdHR2ekdoQ2dtY1Z5M092aTR5d0VCSkpoTGVrQmV1cG5OWTUvL08rOUxobEhwCmVIcVN1cG9MazZSbDhtTGJkK3ptWTRoWVRzeExDRnpQcDJNSGI1NXZ5eWMxRTdJK1RjcVNXMjFQemlyNWFQcWwKYlFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==" }
+
+        // Prefill
+        val (prefillRes, prefillErr) = wrapAPIException { AuthenticationBootstrapAPI.prefillCandidates(instagram.session) }
+        prefillRes ?: return SyntheticResponse.Bootstrap.Failure(prefillErr!!)
+
+        // QE sync with experiments
+        data = JSONObject()
+                .put("id", instagram.session.uuid)
+                .put("server_config_retrieval", "1")
+                .put("experiments", EXPERIMENTS)
+
+        val (syncExperimentsRes, syncExperimentsErr) = wrapAPIException { AuthenticationBootstrapAPI.sync(instagram.session, data) }
+        syncExperimentsRes ?: return SyntheticResponse.Bootstrap.Failure(syncExperimentsErr!!)
+
+        // Contact prefill
+        val (contactPrefillRes, contactPrefillErr) = wrapAPIException { AuthenticationBootstrapAPI.contactPointPrefill(instagram.session) }
+        contactPrefillRes ?: return SyntheticResponse.Bootstrap.Failure(contactPrefillErr!!)
+
+        // QE sync with new metadata
+        data = JSONObject()
+                .put("id", instagram.session.uuid)
+                .put("_csrftoken", instagram.session.csrfToken)
+                .put("server_config_retrieval", "1")
+
+        val (syncWithHeadersRes, syncWithHeadersErr) = wrapAPIException { AuthenticationBootstrapAPI.sync(instagram.session, data) }
+        syncWithHeadersRes ?: return SyntheticResponse.Bootstrap.Failure(syncWithHeadersErr!!)
+
+        // QE sync with new metadata and experiments
+        data = JSONObject()
+                .put("id", instagram.session.uuid)
+                .put("_csrftoken", instagram.session.csrfToken)
+                .put("server_config_retrieval", "1")
+                .put("experiments", EXPERIMENTS)
+
+        val (syncExperimentsWithHeadersRes, syncExperimentsWithHeadersErr) = wrapAPIException { AuthenticationBootstrapAPI.sync(instagram.session, data) }
+        syncExperimentsWithHeadersRes ?: return SyntheticResponse.Bootstrap.Failure(syncExperimentsWithHeadersErr!!)
+
+        // Prep for login
 
         if (instagram.session.csrfToken.isBlank()) {
-            return SyntheticResponse.Bootstrap.Failure(InstagramAPIException(412, "Unable to fetch token for use"))
+            return SyntheticResponse.Bootstrap.Failure(InstagramAPIException(412, "Unable to fetch token for user"))
         }
 
         return SyntheticResponse.Bootstrap.Success(JSONObject().put("token", instagram.session.csrfToken))
+    }
+
+
+    private fun postLogin(): SyntheticResponse.Bootstrap {
+
+        val userId = instagram.session.cookieJar.getCookie("ds_user_id")?.value?.toString()
+        if (userId.isNullOrBlank()) {
+            println("User ID is blank")
+        }
+
+        // QE sync with new metadata
+        var data = JSONObject()
+                .put("id", userId)
+                .put("_uid", userId)
+                .put("_uuid", instagram.session.uuid)
+                .put("_csrftoken", instagram.session.csrfToken)
+                .put("server_config_retrieval", "1")
+
+        println("Sync post login: $data")
+
+        val (syncWithHeadersRes, syncWithHeadersErr) = wrapAPIException { AuthenticationBootstrapAPI.sync(instagram.session, data) }
+        syncWithHeadersRes ?: return SyntheticResponse.Bootstrap.Failure(syncWithHeadersErr!!)
+
+        // QE sync with new metadata and experiments
+        data = JSONObject()
+                .put("id", userId)
+                .put("_uid", userId)
+                .put("_uuid", instagram.session.uuid)
+                .put("_csrftoken", instagram.session.csrfToken)
+                .put("server_config_retrieval", "1")
+                .put("experiments", EXPERIMENTS)
+
+        val (syncExperimentsWithHeadersRes, syncExperimentsWithHeadersErr) = wrapAPIException { AuthenticationBootstrapAPI.sync(instagram.session, data) }
+        syncExperimentsWithHeadersRes ?: return SyntheticResponse.Bootstrap.Failure(syncExperimentsWithHeadersErr!!)
+
+        // Token refresh once more, cookies are saved here
+        val (tokenRes, tokenErr) = wrapAPIException { AuthenticationBootstrapAPI.getToken(instagram.session) }
+        tokenRes ?: return SyntheticResponse.Bootstrap.Failure(tokenErr!!)
+
+        return SyntheticResponse.Bootstrap.Success(JSONObject().put("token", ""))
     }
 
 
@@ -123,10 +197,12 @@ class Authentication internal constructor(private val instagram: Instagram) {
     /**
      * Creates a SyntheticResponse from the response of an auth preperation API request.
      *
-     * @param path  The path of the auth challenge API as returned from the corresponding sentry.
+     * @param path      The path of the auth challenge API as returned from the corresponding sentry.
+     * @param nonce     The nonce of the auth challenge API as returned from the corresponding sentry.
+     * @param userId    The userId in the auth challenge API as returned from the corresponding sentry.
      */
-    fun prepareAuthChallenge(path: String): SyntheticResponse.ChallengeResult {
-        val (res, error) = wrapAPIException { AuthenticationAPI.prepareAuthChallenge(instagram.session, path) }
+    fun prepareAuthChallenge(path: String, nonce: String, userId: String): SyntheticResponse.ChallengeResult {
+        val (res, error) = wrapAPIException { AuthenticationAPI.prepareAuthChallenge(instagram.session, path, nonce, userId) }
 
         res ?: return SyntheticResponse.ChallengeResult.Failure(error!!)
 
@@ -142,9 +218,10 @@ class Authentication internal constructor(private val instagram: Instagram) {
         }
     }
 
-    fun selectAuthChallengeMethod(path: String, method: String): SyntheticResponse.AuthMethodSelectionResult {
+    fun selectAuthChallengeMethod(path: String, method: String, nonce: String, userId: String): SyntheticResponse.AuthMethodSelectionResult {
         val data = Crypto.generateAuthenticatedChallengeParams(instagram.session) {
             it.put("choice", if (AUTH_METHOD_PHONE == method) 0 else 1)
+            it.put("challenge_context", """{"step_name": "select_verify_method", "nonce_code": "$nonce", "user_id": $userId, "is_stateless": false}""")
         }
 
         val (res, error) = wrapAPIException { AuthenticationAPI.selectAuthChallengeMethod(instagram.session, path, data) }
@@ -165,9 +242,10 @@ class Authentication internal constructor(private val instagram: Instagram) {
         }
     }
 
-    fun submitChallengeCode(path: String, code: String): SyntheticResponse.ChallengeCodeSubmitResult {
+    fun submitChallengeCode(path: String, code: String, nonce: String, userId: String): SyntheticResponse.ChallengeCodeSubmitResult {
         val data = Crypto.generateAuthenticatedChallengeParams(instagram.session) {
             it.put("security_code", code)
+            it.put("challenge_context", """{"step_name": "select_verify_method", "nonce_code": "$nonce", "user_id": $userId, "is_stateless": false}""")
         }
 
         val (res, error) = wrapAPIException { AuthenticationAPI.submitAuthChallenge(instagram.session, path, data) }
@@ -199,7 +277,7 @@ class Authentication internal constructor(private val instagram: Instagram) {
 
     private fun processLogin(username: String, password: String, token: String): SyntheticResponse.Auth {
         // Generate the login payload.
-        val data = Crypto.generateLoginPayload(instagram.session, token, username, password, 1)
+        val data = Crypto.generateLoginPayload(instagram.session, username, password, 1)
 
         val (res, error) = wrapAPIException { AuthenticationAPI.login(instagram.session, data) }
 
@@ -208,8 +286,6 @@ class Authentication internal constructor(private val instagram: Instagram) {
         return when (res.statusCode) {
             200 -> SyntheticResponse.Auth.Success(buildSuccess(res))
             400 -> {
-                // println(res.jsonObject.toString(4))
-
                 when {
                     res.jsonObject.optBoolean("two_factor_required") -> {
                         // User requires two factor.
@@ -232,7 +308,13 @@ class Authentication internal constructor(private val instagram: Instagram) {
     }
 
     private fun buildSuccess(res: Response): JSONObject {
-        instagram.session = instagram.session.copy(primaryKey = res.jsonObject.optJSONObject("logged_in_user")?.optString("pk") ?: "")
+        // Store the credentials
+        instagram.session.claimToken = res.headers.getOrElse("x-ig-set-www-claim") { "" }
+        instagram.session.authorizationToken = res.headers.getOrElse("ig-set-authorization") { "" }
+
+        val post = postLogin()
+
+        println(post)
 
         return res.jsonObject.put("sdk_data", instagram.session.serialize())
     }

@@ -5,8 +5,12 @@ import io.karn.instagram.core.Session
 import khttp.get
 
 internal object MediaAPI : API() {
-    fun getInfoFromShortkey(session: Session, shortKey: String) =
-            get(url = String.format(Endpoints.MEDIA_INFO, shortKey))
+    fun getInfoFromShortKey(session: Session, shortKey: String) =
+            get(url = String.format(Endpoints.MEDIA_INFO, shortKey),
+                    params = mapOf(
+                            "__a" to "1"
+                    ),
+                    headers = getRequestHeaders(session))
 
     fun getLikes(session: Session, mediaKey: String) =
             get(url = String.format(Endpoints.MEDIA_LIKES, mediaKey),
@@ -14,8 +18,7 @@ internal object MediaAPI : API() {
                             "rank_token" to session.rankToken,
                             "max_id" to ""
                     ),
-                    headers = getRequestHeaders(session),
-                    cookies = session.cookieJar)
+                    headers = getRequestHeaders(session))
 
     fun getComments(session: Session, mediaKey: String) =
             get(url = String.format(Endpoints.MEDIA_COMMENTS, mediaKey),
@@ -23,6 +26,5 @@ internal object MediaAPI : API() {
                             "rank_token" to session.rankToken,
                             "max_id" to ""
                     ),
-                    headers = getRequestHeaders(session),
-                    cookies = session.cookieJar)
+                    headers = getRequestHeaders(session))
 }

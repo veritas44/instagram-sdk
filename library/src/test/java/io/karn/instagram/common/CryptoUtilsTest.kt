@@ -5,7 +5,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.floor
 import kotlin.test.assertEquals
 
 @RunWith(RobolectricTestRunner::class)
@@ -21,6 +20,7 @@ class CryptoUtilsTest {
         -----END PUBLIC KEY-----
          */
         const val TEST_PUBLIC_KEY = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FDby8zdHVWMHZTcFRCUktlcGY0UUVtTnpFUgpob1RSQ3pkM0w5MDdRYnZxeU9OQ1BYN0pEWDRQdzJsTkVkcVF3b2xITmEzd2tMdnlmWXEwZUQrc2V4V0lqQmlBCjVjVG1xdGJSMjFqMVlpcTNFMFk4SkZzL3AxS3M3d3B3bndSamYvVWZSMFNpMzZ4TUV0VlAxUGxOQlVRa0FaamMKM2JFVEIyeW51aVdQRWFCNXV3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQ=="
+
         /**
         -----BEGIN RSA PRIVATE KEY-----
         MIICXQIBAAKBgQCo/3tuV0vSpTBRKepf4QEmNzERhoTRCzd3L907QbvqyONCPX7J

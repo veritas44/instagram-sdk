@@ -1,11 +1,13 @@
 package io.karn.instagram.api
 
 import io.karn.instagram.common.generateUUID
+import io.karn.instagram.core.Crypto
 import io.karn.instagram.core.Endpoints
 import io.karn.instagram.core.Session
 import khttp.get
 import khttp.post
 import khttp.responses.Response
+import org.json.JSONObject
 
 internal object AuthenticationAPI : API() {
 
@@ -19,11 +21,12 @@ internal object AuthenticationAPI : API() {
                 allowRedirects = true)
     }
 
-    fun login(session: Session, data: String): Response {
+    fun login(session: Session, data: JSONObject): Response {
         return post(url = Endpoints.LOGIN,
-                headers = getRequestHeaders(session),
+                headers = getRequestHeaders(session)
+                        + ("Host" to "i.instagram.com"),
                 allowRedirects = true,
-                data = data)
+                data = Crypto.generateSignedBody(data.toString()))
     }
 
     fun twoFactor(session: Session, data: String): Response {
@@ -32,19 +35,19 @@ internal object AuthenticationAPI : API() {
                 data = data)
     }
 
-    fun prepareAuthChallenge(session: Session, challengePath: String): Response {
+    fun prepareAuthChallenge(session: Session, challengePath: String, nonce: String, userId: String): Response {
         return get(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
                 headers = getRequestHeaders(session),
                 params = mapOf(
                         "guid" to session.uuid,
-                        "device_id" to session.androidId
+                        "device_id" to session.androidId,
+                        "challenge_context" to """{"step_name": "", "nonce_code": "$nonce", "user_id": $userId, "is_stateless": false}"""
                 ))
     }
 
     fun selectAuthChallengeMethod(session: Session, challengePath: String, data: String): Response {
         return post(url = String.format(Endpoints.CHALLENGE_PATH, challengePath),
                 headers = getRequestHeaders(session),
-                cookies = session.cookieJar,
                 data = data)
     }
 

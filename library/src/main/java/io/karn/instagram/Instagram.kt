@@ -76,9 +76,6 @@ class Instagram private constructor(internal val configuration: Configuration) {
         val jsonData = JSONObject(data.ifBlank { "{}" })
 
         session = session.copy(instanceId = instanceId,
-                primaryKey = jsonData.optString("primaryKey", session.primaryKey),
-                csrfToken = jsonData.optString("csrfToken", session.csrfToken),
-                midToken = jsonData.optString("midToken", session.midToken),
                 claimToken = jsonData.optString("claimToken", session.claimToken),
                 authorizationToken = jsonData.optString("authorizationToken", session.authorizationToken),
                 cookieJar = CookieUtils.deserializeFromJson(jsonData.optJSONArray("cookies"), session.cookieJar)
@@ -92,8 +89,6 @@ class Instagram private constructor(internal val configuration: Configuration) {
                 // Update the session with new values
                 session = session.copy(
                         // Update values if needed or default to existing values
-                        csrfToken = response.cookies.getCookie("csrftoken")?.value?.toString() ?: session.csrfToken,
-                        midToken = response.headers["ig-set-x-mid"]?.takeUnless { it.isBlank() } ?: session.midToken,
                         claimToken = response.headers["x-ig-set-www-claim"]?.takeUnless { it.isBlank() } ?: session.claimToken,
                         authorizationToken = response.headers["ig-set-authorization"]?.takeUnless { it.isBlank() || it == "Bearer IGT:2:" } ?: session.authorizationToken,
                         publicKeyId = response.headers["ig-set-password-encryption-key-id"]?.takeUnless { it.isBlank() }?.toIntOrNull() ?: session.publicKeyId,

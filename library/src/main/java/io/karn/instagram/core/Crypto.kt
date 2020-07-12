@@ -18,30 +18,24 @@ internal object Crypto {
         return UUID.nameUUIDFromBytes("$name$uuid${(System.currentTimeMillis() / duration).roundToInt()}".toByteArray()).toString()
     }
 
-    fun generateLoginPayload(session: Session, token: String, username: String, password: String, loginAttempts: Int): String {
+    fun generateLoginPayload(session: Session, username: String, password: String, loginAttempts: Int): JSONObject {
         val time = (System.currentTimeMillis() / 1000).toString()
-
-        // TODO: Validate the public key and ID.
-
         val encPassword = CryptoUtils.encryptPassword(session.publicKey, session.publicKeyId, time, password)
 
-        val data = JSONObject()
-                .put("username", username)
-                .put("password", password)
-                .put("enc_password", "#PWD_INSTAGRAM:4:$time:$encPassword")
-                .put("guid", session.uuid)
-                .put("phone_id", session.phoneId)
-                .put("_csrftoken", token)
-                .put("device_id", session.androidId)
-                .put("adid", session.adid)
-                .put("google_tokens", "[]")
-                .put("login_attempt_count", loginAttempts)
-                // TODO: Adjust this to have the correct country code
-                .put("country_codes", """[{"country_code":"1","source":["default"]}]""")
+        return JSONObject()
                 .put("jazoest", session.jazoest)
-
-        return generateSignature(data.toString())
+                .put("country_codes", """[{"country_code":"1","source":["default"]}]""")
+                .put("phone_id", session.phoneId)
+                .put("username", username)
+                .put("enc_password", "#PWD_INSTAGRAM:4:$time:$encPassword")
+                .put("_csrftoken", session.csrfToken)
+                .put("adid", session.adid)
+                .put("guid", session.uuid)
+                .put("device_id", session.androidId)
+                .put("google_tokens", "[]")
+                .put("login_attempt_count", loginAttempts.toString())
     }
+
 
     fun generateTwoFactorPayload(session: Session, code: String, identifier: String, token: String, username: String, password: String): String {
         val data = JSONObject()
@@ -52,29 +46,29 @@ internal object Crypto {
                 .put("device_id", session.androidId)
                 .put("password", password)
 
-        return generateSignature(data.toString())
+        return generateSignedBody(data.toString())
     }
 
     fun generateAuthenticatedParams(session: Session, mutate: (JSONObject) -> Unit = {}): String {
         val data = JSONObject()
                 .put("_uuid", session.uuid)
-                .put("_uid", session.primaryKey)
+                .put("_uid", session.dsUserId)
                 .put("_csrftoken", session.csrfToken)
 
         mutate(data)
 
-        return generateSignature(data.toString())
+        return generateSignedBody(data.toString())
     }
 
     fun generateAuthenticatedChallengeParams(session: Session, mutate: (JSONObject) -> Unit = {}): String {
         val data = JSONObject()
+                .put("_csrftoken", session.csrfToken)
                 .put("guid", session.uuid)
                 .put("device_id", session.androidId)
-                .put("_csrftoken", session.csrfToken)
 
         mutate(data)
 
-        return generateSignature(data.toString())
+        return generateSignedBody(data.toString())
     }
 
     private fun generateSignedBody(key: String, data: String): String {
@@ -91,5 +85,12 @@ internal object Crypto {
         val signedBody = generateSignedBody(SIG_KEY, payload)
 
         return ("signed_body=$signedBody.$parsedData&ig_sig_key_version=$SIG_VERSION")
+    }
+
+    internal fun generateSignedBody(payload: String): String {
+
+        val encodedData = URLEncoder.encode(payload, "UTF-8")
+
+        return "signed_body=SIGNATURE.$encodedData"
     }
 }

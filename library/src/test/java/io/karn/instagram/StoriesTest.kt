@@ -11,7 +11,7 @@ class StoriesTest : TestBase() {
 
     @Test
     fun validateStories() {
-        val res = Instagram.getInstance().stories.getStories(Instagram.getInstance().session.primaryKey)
+        val res = Instagram.getInstance().stories.getStories(Instagram.getInstance().session.dsUserId)
 
         assertTrue(res is SyntheticResponse.StoryReel.Success)
     }

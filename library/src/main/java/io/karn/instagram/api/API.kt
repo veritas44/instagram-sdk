@@ -1,6 +1,5 @@
 package io.karn.instagram.api
 
-import io.karn.instagram.Instagram
 import io.karn.instagram.common.CookieUtils
 import io.karn.instagram.core.Session
 import java.util.Locale
@@ -8,18 +7,19 @@ import java.util.Locale
 open class API {
 
     companion object {
-        private const val APP_VERSION = "121.0.0.29.119"
-        private const val VERSION_CODE = "185203708"
+        private val locale = Locale.getDefault().toString()
+        private const val APP_VERSION = "148.0.0.33.121"
+        private const val VERSION_CODE = "227298996"
 
         private const val FACEBOOK_ANALYTICS_ID = "567067343352427"
 
-        private const val BLOKS_VERSION_ID = "1b030ce63a06c25f3e4de6aaaf6802fe1e76401bc5ab6e5fb85ed6c2d333e0c7"
+        private const val BLOKS_VERSION_ID = "5da07fc1b20eb4c7d1b2e6146ee5f197072cbbd193d2d1eb3bb4e825d3c39e28"
     }
 
-    fun getRequestHeaders(session: Session, extended: Boolean = true): Map<String, String> {
+    fun getRequestHeaders(session: Session): Map<String, String> {
         return hashMapOf(
-                "X-IG-App-Locale" to Locale.getDefault().toString(),
-                "X-IG-Device-Locale" to Locale.getDefault().toString(),
+                "X-IG-App-Locale" to locale,
+                "X-IG-Device-Locale" to locale,
                 "X-Pigeon-Session-Id" to session.pigeonSessionId,
                 "X-Pigeon-Rawclienttime" to "%.3f".format(System.currentTimeMillis() / 1000f),
                 "X-IG-Connection-Speed" to "-1kbps",
@@ -27,8 +27,6 @@ open class API {
                 "X-IG-Bandwidth-TotalBytes-B" to "0",
                 "X-IG-Bandwidth-TotalTime-MS" to "0",
                 "X-Bloks-Version-Id" to BLOKS_VERSION_ID,
-                "X-MID" to (session.midToken.takeIf { extended } ?: ""),
-                "X-IG-WWW-Claim" to (session.claimToken.takeIf { extended } ?: ""),
                 "X-Bloks-Is-Layout-RTL" to "false",
                 "X-IG-Device-ID" to session.uuid, // UUID4
                 "X-IG-Android-ID" to session.androidId, // `android-${hash}`
@@ -36,17 +34,38 @@ open class API {
                 "X-IG-Capabilities" to "3brTvwE=",
                 "X-IG-App-ID" to FACEBOOK_ANALYTICS_ID,
                 "User-Agent" to buildUserAgent(session.deviceDPI, session.deviceResolution),
-                "Accept-Language" to Locale.getDefault().toString().replace('_', '-'),
+                "Accept-Language" to locale.replace('_', '-'),
                 "Content-Type" to "application/x-www-form-urlencoded; charset=UTF-8",
                 "Accept-Encoding" to "gzip, deflate",
                 "Host" to "i.instagram.com",
                 "X-FB-HTTP-Engine" to "Liger",
                 "Connection" to "close",
-                "Cookie" to (CookieUtils.buildCookieHeader(session.cookieJar).takeIf { extended } ?: ""),
-                "Authorization" to (session.authorizationToken.takeIf { extended } ?: "")
-        ).filterNot { it.value.isBlank() }
+                "Content-Type" to "application/x-www-form-urlencoded; charset=UTF-8",
+                "Cookie" to CookieUtils.buildCookieHeader(session.cookieJar)
+        ).also { headers ->
+            session.cookieJar.getCookie("mid")?.value?.toString()?.also {
+                headers["X-MID"] = it
+            }
+            session.cookieJar.getCookie("rur")?.value?.toString()?.also {
+                headers["IG-U-RUR"] = it
+            }
+            session.cookieJar.getCookie("shbid")?.value?.toString()?.also {
+                headers["IG-U-SHBID"] = it
+            }
+            session.cookieJar.getCookie("shbts")?.value?.toString()?.also {
+                headers["IG-U-SHBTS"] = it
+            }
+            session.cookieJar.getCookie("ds_user_id")?.value?.toString()?.also {
+                headers["IG-U-DS-USER-ID"] = it
+            }
+            session.claimToken.also {
+                headers["X-IG-WWW-Claim"] = it
+            }
+            session.authorizationToken.takeUnless { it.isBlank() }?.also {
+                headers["Authorization"] = it
+            }
+        }.filterNot { it.value.isBlank() }
     }
-
 
     /**
      * Function to build the UserAgent which is used with the API to manage user authentication. This User Agent must be
@@ -75,6 +94,6 @@ open class API {
                                model: String = android.os.Build.MODEL,
                                hardware: String = android.os.Build.HARDWARE): String {
 
-        return "Instagram $APP_VERSION Android ($androidVersion/$androidRelease; $dpi; $resolution; $manufacturer$brand; $model; $device; $hardware; ${Locale.getDefault()}; $VERSION_CODE)"
+        return "Instagram $APP_VERSION Android ($androidVersion/$androidRelease; $dpi; $resolution; $manufacturer$brand; $model; $device; $hardware; $locale; $VERSION_CODE)"
     }
 }

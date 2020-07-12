@@ -37,7 +37,11 @@ open class TestBase {
                     assertNotNull(res.data.optJSONObject("logged_in_user"))
                     assertNotEquals("", res.data.optString("sdk_data"))
                 }
-                else -> throw IllegalStateException("Failed to login")
+                else -> {
+                    println(res)
+
+                    throw IllegalStateException("Failed to login")
+                }
             }
 
             println("Done initializing.")

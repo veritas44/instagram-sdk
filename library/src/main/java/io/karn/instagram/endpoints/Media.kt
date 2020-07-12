@@ -12,7 +12,7 @@ class Media internal constructor(private val instagram: Instagram) {
      *
      */
     fun getMediaFromShortKey(shortKey: String): SyntheticResponse.MediaInfo {
-        val (res, error) = wrapAPIException { MediaAPI.getInfoFromShortkey(instagram.session, shortKey) }
+        val (res, error) = wrapAPIException { MediaAPI.getInfoFromShortKey(instagram.session, shortKey) }
 
         res ?: return SyntheticResponse.MediaInfo.Failure(error!!)
 

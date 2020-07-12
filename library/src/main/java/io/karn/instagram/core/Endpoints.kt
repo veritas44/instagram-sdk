@@ -7,7 +7,11 @@ internal object Endpoints {
     const val GRAPH_API_URL = "https://instagram.com/graphql/query"
 
     const val MSISDN_HEADER_BOOTSTRAP = "$BOOTSTRAP_API_URL/accounts/msisdn_header_bootstrap/"
+
+    const val TOKEN_BOOTSTRAP = "$BOOTSTRAP_API_URL/zr/token/result/"
     const val LAUNCHER_SYNC = "$BOOTSTRAP_API_URL/launcher/sync/"
+    const val PREFILL_CANDIDATES = "$BOOTSTRAP_API_URL/accounts/get_prefill_candidates/"
+    const val CONTACT_POINT_PREFILL = "$API_URL/accounts/contact_point_prefill/"
 
     const val CSRF_TOKEN = "$API_URL/si/fetch_headers/"
     const val LOGIN = "$API_URL/accounts/login/"
@@ -26,7 +30,7 @@ internal object Endpoints {
 
     const val STORIES = "$API_URL/feed/user/%s/story/"
 
-    const val MEDIA_INFO = "$IG_URL/p/%s/?__a=1"
+    const val MEDIA_INFO = "$IG_URL/p/%s/"
     const val MEDIA_LIKES = "$API_URL/media/%s/likers/"
     const val MEDIA_COMMENTS = "$API_URL/media/%s/comments/"
 
