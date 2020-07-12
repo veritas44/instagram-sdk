@@ -245,7 +245,7 @@ class Authentication internal constructor(private val instagram: Instagram) {
     fun submitChallengeCode(path: String, code: String, nonce: String, userId: String): SyntheticResponse.ChallengeCodeSubmitResult {
         val data = Crypto.generateAuthenticatedChallengeParams(instagram.session) {
             it.put("security_code", code)
-            it.put("challenge_context", """{"step_name": "select_verify_method", "nonce_code": "$nonce", "user_id": $userId, "is_stateless": false}""")
+            it.put("challenge_context", """{"step_name": "verify_code", "nonce_code": "$nonce", "user_id": $userId, "is_stateless": false}""")
         }
 
         val (res, error) = wrapAPIException { AuthenticationAPI.submitAuthChallenge(instagram.session, path, data) }
