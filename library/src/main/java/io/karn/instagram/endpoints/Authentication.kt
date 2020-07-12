@@ -146,7 +146,7 @@ class Authentication internal constructor(private val instagram: Instagram) {
         val (tokenRes, tokenErr) = wrapAPIException { AuthenticationBootstrapAPI.getToken(instagram.session) }
         tokenRes ?: return SyntheticResponse.Bootstrap.Failure(tokenErr!!)
 
-        return SyntheticResponse.Bootstrap.Success(JSONObject().put("token", ""))
+        return SyntheticResponse.Bootstrap.Success(JSONObject())
     }
 
 
